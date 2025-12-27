@@ -49,7 +49,15 @@ def _parse_git_log(text: str) -> list[Commit]:
         sha = lines[0].strip()
         date = lines[1].strip()
         subject = lines[2].strip()
-        files = [ln.strip() for ln in lines[3:] if ln.strip()]
+        files = []
+        for ln in lines[3:]:
+            s = ln.strip()
+            if not s:
+                continue
+            # Defensive: ignore separators if they leak into the file list.
+            if s == "----":
+                continue
+            files.append(s)
         commits.append(Commit(sha=sha, date=date, subject=subject, files=files))
     return commits
 
@@ -131,8 +139,9 @@ def _update_history_file(path: Path, new_block: str) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Append/replace an auto-generated git log section in history.md.")
-    ap.add_argument("--path", default="NIHO/gov", help="Target path to summarize (default: NIHO/gov)")
-    ap.add_argument("--history", default="NIHO/gov/history.md", help="History markdown file to update")
+    # This script now lives in the standalone `nihogov` repository, so defaults are repo-root relative.
+    ap.add_argument("--path", default=".", help="Target path to summarize (default: .)")
+    ap.add_argument("--history", default="history.md", help="History markdown file to update (default: history.md)")
     ap.add_argument("--max-commits", type=int, default=30, help="Max commits to include (default: 30)")
     args = ap.parse_args()
 
@@ -188,4 +197,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

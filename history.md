@@ -234,25 +234,60 @@ Cloud Vision（非同期PDF OCR）を回す場合の典型構成:
 今後ここに日付ごとに追記する。
 
 - YYYY-MM-DD: （例）`gikaihi.pdf` 再生成、`budget.total_display` のルール追加、overviewビューア改善…など
+- 2025-12-27: `nihogov` リポジトリを作成し、`NIHO/gov` を独立リポジトリとして初期コミット→GitHubへpush（巨大な `.venv/`・OCR出力・PDF・生成JSON・credential は `.gitignore` で除外、README競合はrebaseで解消）
 
 
 <!-- HISTORY:AUTO:START -->
 ## 自動追記（git log）
 
-- 対象パス: `NIHO/gov`
-- 生成時刻: `2025-12-27T07:27:08.290223+00:00`
+- 対象パス: `.`
+- 生成時刻: `2025-12-27T07:50:14.397150+00:00`
+- 反映コミット数: 3
 
-このパスに対するコミット履歴が見つかりませんでした。
+### 直近の変更（新しい順）
 
-考えられる理由:
-- `NIHO/gov` がまだgitにコミットされていない（untracked / 未追加）
-- 別ブランチで作業している
+#### 2025-12-27
+- `3813d59` Update viewers
+  - `viewer/index.html`
+  - `viewer/overview.html`
+- `54ec4e7` Initial commit: budget PDF parsers + viewers
+  - `.gitignore`
+  - `README.md`
+  - `export_projects_csv.py`
+  - `history.md`
+  - `kamakura-budget-ocr-v1/README.md`
+  - `kamakura-budget-ocr-v1/config.py`
+  - `kamakura-budget-ocr-v1/example/run_sample.sh`
+  - `kamakura-budget-ocr-v1/gcv_client.py`
+  - `kamakura-budget-ocr-v1/helpers.py`
+  - `kamakura-budget-ocr-v1/json_converter.py`
+  - `kamakura-budget-ocr-v1/layout_reconstructor.py`
+  - `kamakura-budget-ocr-v1/ocr_normalizer.py`
+  - `kamakura-budget-ocr-v1/ocr_pipeline.py`
+  - `kamakura-budget-ocr-v1/project_segmenter.py`
+  - `kamakura-budget-ocr-v1/requirements.txt`
+  - `kamakura-budget-ocr-v1/review_ui.py`
+  - `kamakura-budget-ocr-v1/validator.py`
+  - `kamakura-budget-ocr-v2/README.md`
+  - `kamakura-budget-ocr-v2/config.py`
+  - `kamakura-budget-ocr-v2/docai_fallback.py`
+  - `kamakura-budget-ocr-v2/gcs_vision_client.py`
+  - `kamakura-budget-ocr-v2/json_converter_v2.py`
+  - `kamakura-budget-ocr-v2/layout_reconstructor_v2.py`
+  - `kamakura-budget-ocr-v2/pipeline.py`
+  - `kamakura-budget-ocr-v2/requirements.txt`
+  - `kamakura-budget-ocr-v2/review.md`
+  - `parse_budget_pdf.py`
+  - `parse_overview_pdf.py`
+  - `project.md`
+  - `review-all.md`
+  - `serve_viewer.py`
+  - `tessdata/jpn.traineddata`
+  - `tessdata/jpn_vert.traineddata`
+  - `update_history_from_git.py`
+  - `viewer/index.html`
+  - `viewer/overview.html`
+- `a5d1c72` Initial commit
+  - `README.md`
 
-現状の差分（working tree）サマリ:
-- 追加/未追跡: 1 件 / 変更: 0 件 / 削除: 0 件
-- 詳細:
-  - `?? NIHO/gov/`
-
-この自動追記を“履歴”として機能させるためのおすすめ:
-- `git add NIHO/gov` → `git commit -m "init NIHO/gov"` で初回コミットしてから運用する
 <!-- HISTORY:AUTO:END -->
