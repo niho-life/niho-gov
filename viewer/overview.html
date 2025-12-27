@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>NIHO 財政全体像（試作）</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: rgba(255, 255, 255, 0.06);
+        --panel2: rgba(255, 255, 255, 0.10);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.65);
+        --accent: #7dd3fc;
+        --border: rgba(255, 255, 255, 0.16);
+        --chip: rgba(125, 211, 252, 0.12);
+        --danger: #fb7185;
+        --ok: #34d399;
+      }
+
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Segoe UI",
+          Roboto, "Helvetica Neue", Arial;
+        background: radial-gradient(1200px 600px at 20% 0%, rgba(125, 211, 252, 0.14), transparent 50%),
+          radial-gradient(1000px 600px at 90% 0%, rgba(167, 139, 250, 0.14), transparent 45%), var(--bg);
+        color: var(--text);
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      header {
+        position: sticky;
+        top: 0;
+        backdrop-filter: blur(10px);
+        background: rgba(11, 16, 32, 0.72);
+        border-bottom: 1px solid var(--border);
+        z-index: 10;
+      }
+
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 18px 16px;
+      }
+
+      h1 {
+        font-size: 18px;
+        margin: 0;
+        letter-spacing: 0.02em;
+      }
+
+      .subtitle {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+
+      .controls {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 900px) {
+        .controls {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .control {
+        padding: 12px;
+      }
+
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      input[type="file"],
+      select {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        outline: none;
+      }
+
+      .hint {
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 14px;
+      }
+      @media (max-width: 1100px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        padding: 12px;
+      }
+
+      .card h2 {
+        margin: 0 0 10px 0;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.88);
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (max-width: 520px) {
+        .row {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .kv {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 10px 12px;
+      }
+      .k {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .v {
+        margin-top: 6px;
+        font-size: 16px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      .v small {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        margin-left: 6px;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .lg {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+
+      .tooltip {
+        position: fixed;
+        pointer-events: none;
+        background: rgba(11, 16, 32, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 12px;
+        color: var(--text);
+        transform: translate(12px, 12px);
+        z-index: 1000;
+        max-width: 320px;
+        display: none;
+      }
+      .tooltip .t {
+        font-weight: 700;
+      }
+      .tooltip .m {
+        margin-top: 6px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-variant-numeric: tabular-nums;
+      }
+      th,
+      td {
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 8px 8px;
+        font-size: 12px;
+        vertical-align: top;
+      }
+      th {
+        text-align: left;
+        color: rgba(255, 255, 255, 0.78);
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.04);
+        position: sticky;
+        top: 0;
+        z-index: 5;
+      }
+      td.num {
+        text-align: right;
+      }
+
+      tr.sel td {
+        background: rgba(125, 211, 252, 0.10);
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.06);
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.80);
+      }
+      .pill b {
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <div style="display: flex; gap: 12px; align-items: baseline; justify-content: space-between; flex-wrap: wrap">
+          <h1>NIHO 財政全体像（試作）</h1>
+          <div class="pill">
+            <span>データ:</span>
+            <b id="dataStatus">未ロード</b>
+          </div>
+        </div>
+        <div class="subtitle">
+          `naiyo-setsumei.pdf` の「一般会計予算総括表（歳出）」と「一般会計歳出予算性質別内訳表」から作る、俯瞰ビュー。
+        </div>
+        <div class="controls">
+          <div class="panel control">
+            <label>JSONを読み込む（`naiyo-setsumei.json`）</label>
+            <input id="fileInput" type="file" accept="application/json" />
+            <div class="hint">
+              ローカルでHTMLを直接開く場合は、ここからJSONを選択してください。<br />
+              ローカルサーバで開ける場合は `../naiyo-setsumei.json` の自動読み込みも試します。
+            </div>
+          </div>
+          <div class="panel control">
+            <label>款を選択（性質別の内訳を表示）</label>
+            <select id="kamokuSelect" disabled></select>
+            <div class="hint">
+              円グラフの扇形をクリックしても切り替えできます。<br />
+              金額はすべて <b>千円</b> 単位（表示は見やすく億円も併記）。
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <div class="grid">
+        <section class="panel card">
+          <h2>歳出（款別）</h2>
+          <div class="row" style="align-items: center">
+            <div id="donutWrap"></div>
+            <div>
+              <div class="row">
+                <div class="kv">
+                  <div class="k">一般会計 歳出合計</div>
+                  <div class="v" id="totalCurrent">-</div>
+                </div>
+                <div class="kv">
+                  <div class="k">前年差（合計）</div>
+                  <div class="v" id="totalDiff">-</div>
+                </div>
+              </div>
+              <div class="hint" id="metaHint">-</div>
+            </div>
+          </div>
+          <div id="donutLegend" class="legend"></div>
+        </section>
+
+        <section class="panel card">
+          <h2>前年差（款別）</h2>
+          <div id="diffChartWrap"></div>
+          <div class="hint">0を基準に、プラスは右・マイナスは左に伸びます。</div>
+        </section>
+      </div>
+
+      <div class="grid">
+        <section class="panel card">
+          <h2>性質別（選択した款の内訳）</h2>
+          <div id="natureWrap"></div>
+          <div class="hint">
+            「計」は款別合計で、p.7（歳出総括表）の金額と一致することを検証済みです。
+          </div>
+        </section>
+
+        <section class="panel card">
+          <h2>一覧（款別）</h2>
+          <div style="overflow: auto; max-height: 560px">
+            <table>
+              <thead>
+                <tr>
+                  <th style="min-width: 78px">款</th>
+                  <th style="min-width: 120px">名称</th>
+                  <th style="min-width: 110px">令和7</th>
+                  <th style="min-width: 110px">令和6</th>
+                  <th style="min-width: 100px">前年差</th>
+                  <th style="min-width: 90px">増減率</th>
+                  <th style="min-width: 90px">構成比</th>
+                </tr>
+              </thead>
+              <tbody id="kamokuTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <script>
+      const COLORS = [
+        "#60a5fa",
+        "#34d399",
+        "#fbbf24",
+        "#f472b6",
+        "#a78bfa",
+        "#fb7185",
+        "#22d3ee",
+        "#f97316",
+        "#c084fc",
+        "#4ade80",
+        "#93c5fd",
+        "#fda4af",
+        "#fde68a",
+        "#86efac",
+      ];
+
+      function fmtInt(n) {
+        if (n === null || n === undefined || Number.isNaN(n)) return "-";
+        return Math.trunc(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      }
+
+      function fmtPct(n, digits = 1) {
+        if (n === null || n === undefined || Number.isNaN(n)) return "-";
+        return `${n.toFixed(digits)}%`;
+      }
+
+      function toOkuYen(amountSenYen, digits = 1) {
+        if (!Number.isFinite(amountSenYen)) return null;
+        return amountSenYen / 100000;
+      }
+
+      function fmtMoney(amountSenYen) {
+        if (!Number.isFinite(amountSenYen)) return "-";
+        const oku = toOkuYen(amountSenYen);
+        const okuText = oku !== null ? `${oku.toFixed(1)}億円` : "-";
+        return `${fmtInt(amountSenYen)}<small>千円（${okuText}）</small>`;
+      }
+
+      function clamp(v, min, max) {
+        return Math.max(min, Math.min(max, v));
+      }
+
+      function polarToCartesian(cx, cy, r, angleDeg) {
+        const a = ((angleDeg - 90) * Math.PI) / 180.0;
+        return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+      }
+
+      function describeArc(cx, cy, rOuter, rInner, startAngle, endAngle) {
+        const startOuter = polarToCartesian(cx, cy, rOuter, endAngle);
+        const endOuter = polarToCartesian(cx, cy, rOuter, startAngle);
+        const startInner = polarToCartesian(cx, cy, rInner, startAngle);
+        const endInner = polarToCartesian(cx, cy, rInner, endAngle);
+        const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+        return [
+          `M ${startOuter.x} ${startOuter.y}`,
+          `A ${rOuter} ${rOuter} 0 ${largeArcFlag} 0 ${endOuter.x} ${endOuter.y}`,
+          `L ${startInner.x} ${startInner.y}`,
+          `A ${rInner} ${rInner} 0 ${largeArcFlag} 1 ${endInner.x} ${endInner.y}`,
+          "Z",
+        ].join(" ");
+      }
+
+      const tooltip = document.getElementById("tooltip");
+      function showTooltip(x, y, title, lines) {
+        tooltip.style.display = "block";
+        tooltip.style.left = `${x}px`;
+        tooltip.style.top = `${y}px`;
+        tooltip.innerHTML = `<div class=\"t\">${title}</div><div class=\"m\">${lines.join("<br/>")}</div>`;
+      }
+      function hideTooltip() {
+        tooltip.style.display = "none";
+      }
+
+      function safeGet(obj, path) {
+        return path.split(".").reduce((a, k) => (a && a[k] !== undefined ? a[k] : undefined), obj);
+      }
+
+      function normalizeDoc(doc) {
+        const items = safeGet(doc, "expenditure_by_kamoku.items") || [];
+        const natureItems = safeGet(doc, "expenditure_nature_by_kamoku.items") || [];
+        const natureCols = safeGet(doc, "expenditure_nature_by_kamoku.columns") || [];
+        const currentTotal = safeGet(doc, "expenditure_by_kamoku.current_total");
+        const previousTotal = safeGet(doc, "expenditure_by_kamoku.previous_total");
+        const fiscalYear = safeGet(doc, "metadata.fiscal_year_reiwa");
+        const unit = safeGet(doc, "metadata.unit") || "千円";
+
+        const byCode = new Map(items.map((it) => [it.code, it]));
+        const natureByCode = new Map(natureItems.map((it) => [it.code, it]));
+
+        return {
+          items,
+          byCode,
+          natureItems,
+          natureByCode,
+          natureCols,
+          currentTotal,
+          previousTotal,
+          fiscalYear,
+          unit,
+        };
+      }
+
+      function renderDonut(state, selectedCode, onSelect) {
+        const wrap = document.getElementById("donutWrap");
+        const legend = document.getElementById("donutLegend");
+        wrap.innerHTML = "";
+        legend.innerHTML = "";
+
+        const w = 340;
+        const h = 220;
+        const cx = 110;
+        const cy = 110;
+        const rOuter = 86;
+        const rInner = 56;
+        const total = state.currentTotal || 0;
+
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("width", w);
+        svg.setAttribute("height", h);
+        svg.style.display = "block";
+
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        svg.appendChild(g);
+
+        let angle = 0;
+        const sorted = [...state.items].sort((a, b) => (b.current || 0) - (a.current || 0));
+        sorted.forEach((it, idx) => {
+          const v = Number(it.current) || 0;
+          if (v <= 0 || total <= 0) return;
+          const share = (v / total) * 360;
+          const start = angle;
+          const end = angle + share;
+          angle = end;
+
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          const d = describeArc(cx, cy, rOuter, rInner, start, end);
+          path.setAttribute("d", d);
+          const color = COLORS[idx % COLORS.length];
+          path.setAttribute("fill", color);
+          path.setAttribute("opacity", it.code === selectedCode ? "1" : "0.78");
+          path.style.cursor = "pointer";
+
+          path.addEventListener("mousemove", (e) => {
+            const pct = total ? (v / total) * 100 : null;
+            showTooltip(e.clientX, e.clientY, `${it.name}（款${it.code}）`, [
+              `令和7: ${fmtInt(v)} 千円`,
+              `構成比: ${pct !== null ? fmtPct(pct, 2) : "-"}`,
+              `前年差: ${fmtInt((it.diff ?? 0))} 千円`,
+            ]);
+          });
+          path.addEventListener("mouseleave", hideTooltip);
+          path.addEventListener("click", () => onSelect(it.code));
+
+          g.appendChild(path);
+
+          const lg = document.createElement("div");
+          lg.className = "lg";
+          lg.style.cursor = "pointer";
+          lg.addEventListener("click", () => onSelect(it.code));
+          const dot = document.createElement("span");
+          dot.className = "dot";
+          dot.style.background = color;
+          const txt = document.createElement("span");
+          const pct = total ? (v / total) * 100 : null;
+          txt.textContent = `${it.name} ${pct !== null ? fmtPct(pct, 1) : "-"}`;
+          lg.appendChild(dot);
+          lg.appendChild(txt);
+          legend.appendChild(lg);
+        });
+
+        const centerText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        centerText.setAttribute("x", cx);
+        centerText.setAttribute("y", cy - 4);
+        centerText.setAttribute("fill", "rgba(255,255,255,0.92)");
+        centerText.setAttribute("font-size", "12");
+        centerText.setAttribute("text-anchor", "middle");
+        centerText.textContent = "歳出合計";
+        svg.appendChild(centerText);
+
+        const centerText2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        centerText2.setAttribute("x", cx);
+        centerText2.setAttribute("y", cy + 18);
+        centerText2.setAttribute("fill", "rgba(255,255,255,0.92)");
+        centerText2.setAttribute("font-size", "16");
+        centerText2.setAttribute("font-weight", "700");
+        centerText2.setAttribute("text-anchor", "middle");
+        centerText2.textContent = total ? `${toOkuYen(total).toFixed(1)}億円` : "-";
+        svg.appendChild(centerText2);
+
+        wrap.appendChild(svg);
+      }
+
+      function renderDiffChart(state, selectedCode, onSelect) {
+        const wrap = document.getElementById("diffChartWrap");
+        wrap.innerHTML = "";
+
+        const items = [...state.items].sort((a, b) => (b.diff || 0) - (a.diff || 0));
+        const diffs = items.map((it) => Number(it.diff) || 0);
+        const maxAbs = Math.max(...diffs.map((d) => Math.abs(d)), 1);
+
+        const w = 540;
+        const rowH = 24;
+        const h = 30 + items.length * rowH;
+        const leftPad = 130;
+        const rightPad = 16;
+        const barW = w - leftPad - rightPad;
+        const cx = leftPad + barW / 2;
+
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("width", "100%");
+        svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+        svg.style.display = "block";
+
+        const axis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        axis.setAttribute("x1", cx);
+        axis.setAttribute("x2", cx);
+        axis.setAttribute("y1", 18);
+        axis.setAttribute("y2", h - 8);
+        axis.setAttribute("stroke", "rgba(255,255,255,0.18)");
+        axis.setAttribute("stroke-width", "1");
+        svg.appendChild(axis);
+
+        items.forEach((it, i) => {
+          const y = 26 + i * rowH;
+          const diff = Number(it.diff) || 0;
+          const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          t.setAttribute("x", leftPad - 8);
+          t.setAttribute("y", y + 8);
+          t.setAttribute("fill", "rgba(255,255,255,0.82)");
+          t.setAttribute("font-size", "11");
+          t.setAttribute("text-anchor", "end");
+          t.textContent = it.name;
+          svg.appendChild(t);
+
+          const barLen = clamp((Math.abs(diff) / maxAbs) * (barW / 2), 0, barW / 2);
+          const barLenVisible = diff === 0 ? 0 : Math.max(barLen, 1.5);
+          const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+          rect.setAttribute("y", y - 2);
+          rect.setAttribute("height", 14);
+          rect.setAttribute("rx", 6);
+          rect.setAttribute("fill", diff >= 0 ? "rgba(52,211,153,0.78)" : "rgba(251,113,133,0.78)");
+          rect.style.cursor = "pointer";
+
+          if (diff >= 0) {
+            rect.setAttribute("x", cx);
+            rect.setAttribute("width", barLenVisible);
+          } else {
+            rect.setAttribute("x", cx - barLenVisible);
+            rect.setAttribute("width", barLenVisible);
+          }
+
+          rect.addEventListener("mousemove", (e) => {
+            showTooltip(e.clientX, e.clientY, `${it.name}（款${it.code}）`, [
+              `前年差: ${fmtInt(diff)} 千円`,
+              `令和7: ${fmtInt(it.current)} 千円`,
+              `令和6: ${fmtInt(it.previous)} 千円`,
+            ]);
+          });
+          rect.addEventListener("mouseleave", hideTooltip);
+          rect.addEventListener("click", () => onSelect(it.code));
+
+          if (it.code === selectedCode) {
+            const outline = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            outline.setAttribute("x", 0);
+            outline.setAttribute("y", y - 6);
+            outline.setAttribute("width", w);
+            outline.setAttribute("height", 22);
+            outline.setAttribute("fill", "rgba(125,211,252,0.08)");
+            outline.setAttribute("stroke", "rgba(125,211,252,0.20)");
+            outline.setAttribute("rx", 10);
+            svg.insertBefore(outline, t);
+          }
+
+          svg.appendChild(rect);
+
+          const v = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          v.setAttribute("x", w - rightPad);
+          v.setAttribute("y", y + 8);
+          v.setAttribute("fill", "rgba(255,255,255,0.72)");
+          v.setAttribute("font-size", "11");
+          v.setAttribute("text-anchor", "end");
+          v.textContent = fmtInt(diff);
+          svg.appendChild(v);
+        });
+
+        wrap.appendChild(svg);
+      }
+
+      function renderNature(state, selectedCode) {
+        const wrap = document.getElementById("natureWrap");
+        wrap.innerHTML = "";
+
+        const it = state.natureByCode.get(selectedCode);
+        const base = state.byCode.get(selectedCode);
+        if (!it || !base) {
+          wrap.textContent = "データがありません。";
+          return;
+        }
+
+        const values = it.values || {};
+        const total = Number(values.total) || 0;
+
+        const cols = state.natureCols.filter((c) => c.key !== "total");
+        const parts = cols
+          .map((c) => ({ key: c.key, label: c.label, value: Number(values[c.key]) || 0 }))
+          .filter((p) => p.value > 0);
+
+        const box = document.createElement("div");
+        box.className = "row";
+        box.style.marginBottom = "10px";
+
+        const kv1 = document.createElement("div");
+        kv1.className = "kv";
+        kv1.innerHTML = `<div class=\"k\">款</div><div class=\"v\">${base.name}<small>款${base.code}</small></div>`;
+        const kv2 = document.createElement("div");
+        kv2.className = "kv";
+        kv2.innerHTML = `<div class=\"k\">計（令和7）</div><div class=\"v\">${fmtMoney(base.current)}</div>`;
+
+        box.appendChild(kv1);
+        box.appendChild(kv2);
+        wrap.appendChild(box);
+
+        const bar = document.createElement("div");
+        bar.className = "kv";
+        bar.style.padding = "12px";
+        const barRow = document.createElement("div");
+        barRow.style.display = "flex";
+        barRow.style.height = "18px";
+        barRow.style.borderRadius = "10px";
+        barRow.style.overflow = "hidden";
+        barRow.style.border = "1px solid rgba(255,255,255,0.14)";
+        barRow.style.background = "rgba(255,255,255,0.05)";
+
+        const legend = document.createElement("div");
+        legend.className = "legend";
+        legend.style.marginTop = "10px";
+
+        parts.forEach((p, idx) => {
+          const pct = total ? (p.value / total) * 100 : 0;
+          const seg = document.createElement("div");
+          seg.style.width = `${pct}%`;
+          const color = COLORS[idx % COLORS.length];
+          seg.style.background = color;
+          seg.style.opacity = "0.82";
+          seg.style.cursor = "default";
+          seg.title = `${p.label}: ${fmtInt(p.value)}千円（${fmtPct(pct, 2)}）`;
+          barRow.appendChild(seg);
+
+          const lg = document.createElement("div");
+          lg.className = "lg";
+          const dot = document.createElement("span");
+          dot.className = "dot";
+          dot.style.background = color;
+          const txt = document.createElement("span");
+          txt.textContent = `${p.label} ${fmtPct(pct, 1)}`;
+          lg.appendChild(dot);
+          lg.appendChild(txt);
+          legend.appendChild(lg);
+        });
+
+        bar.appendChild(barRow);
+        bar.appendChild(legend);
+        wrap.appendChild(bar);
+
+        const tbl = document.createElement("table");
+        tbl.innerHTML = `<thead><tr><th>性質</th><th style=\"text-align:right\">金額（千円）</th><th style=\"text-align:right\">構成比</th></tr></thead>`;
+        const tb = document.createElement("tbody");
+        parts
+          .sort((a, b) => b.value - a.value)
+          .forEach((p) => {
+            const pct = total ? (p.value / total) * 100 : null;
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${p.label}</td><td class=\"num\">${fmtInt(p.value)}</td><td class=\"num\">${pct !== null ? fmtPct(pct, 1) : "-"}</td>`;
+            tb.appendChild(tr);
+          });
+        const totalTr = document.createElement("tr");
+        totalTr.innerHTML = `<td><b>計</b></td><td class=\"num\"><b>${fmtInt(total)}</b></td><td class=\"num\"><b>${fmtPct(100, 1)}</b></td>`;
+        tb.appendChild(totalTr);
+        tbl.appendChild(tb);
+        wrap.appendChild(tbl);
+      }
+
+      function renderTable(state, selectedCode, onSelect) {
+        const tb = document.getElementById("kamokuTableBody");
+        tb.innerHTML = "";
+        state.items.forEach((it) => {
+          const tr = document.createElement("tr");
+          if (it.code === selectedCode) tr.className = "sel";
+          tr.style.cursor = "pointer";
+          tr.addEventListener("click", () => onSelect(it.code));
+          const rate = it.rate;
+          const diff = Number(it.diff) || 0;
+          tr.innerHTML = `
+            <td>${it.code}</td>
+            <td>${it.name}</td>
+            <td class=\"num\">${fmtInt(it.current)}</td>
+            <td class=\"num\">${fmtInt(it.previous)}</td>
+            <td class=\"num\" style=\"color:${diff >= 0 ? "rgba(52,211,153,0.9)" : "rgba(251,113,133,0.9)"}\">${fmtInt(diff)}</td>
+            <td class=\"num\">${rate === null || rate === undefined ? "-" : fmtPct(rate, 1)}</td>
+            <td class=\"num\">${it.share === null || it.share === undefined ? "-" : fmtPct(it.share, 1)}</td>
+          `;
+          tb.appendChild(tr);
+        });
+      }
+
+      function setStatus(text) {
+        document.getElementById("dataStatus").textContent = text;
+      }
+
+      function renderAll(doc, selectedCode) {
+        const state = normalizeDoc(doc);
+        if (!state.items.length || !state.natureItems.length) {
+          setStatus("形式不明");
+          return;
+        }
+
+        setStatus(`令和${state.fiscalYear || "?"}年度`);
+
+        const totalCurrent = Number(state.currentTotal) || 0;
+        const totalPrev = Number(state.previousTotal) || 0;
+        document.getElementById("totalCurrent").innerHTML = fmtMoney(totalCurrent);
+        const diff = totalCurrent && totalPrev ? totalCurrent - totalPrev : 0;
+        const diffOku = toOkuYen(diff);
+        const diffBadge = diff >= 0 ? `<span style=\"color: var(--ok)\">+${fmtInt(diff)}</span>` : `<span style=\"color: var(--danger)\">${fmtInt(diff)}</span>`;
+        document.getElementById("totalDiff").innerHTML = `${diffBadge}<small>千円（${diffOku !== null ? diffOku.toFixed(1) : "-"}億円）</small>`;
+
+        document.getElementById(
+          "metaHint"
+        ).textContent = `単位: ${state.unit} / 歳出合計: ${fmtInt(totalCurrent)}千円 / 前年: ${fmtInt(totalPrev)}千円`;
+
+        const select = document.getElementById("kamokuSelect");
+        select.innerHTML = "";
+        state.items.forEach((it) => {
+          const opt = document.createElement("option");
+          opt.value = it.code;
+          opt.textContent = `款${it.code} ${it.name}`;
+          select.appendChild(opt);
+        });
+        select.disabled = false;
+
+        const onSelect = (code) => {
+          const c = Number(code);
+          select.value = String(c);
+          renderDonut(state, c, onSelect);
+          renderDiffChart(state, c, onSelect);
+          renderNature(state, c);
+          renderTable(state, c, onSelect);
+        };
+
+        select.addEventListener("change", () => onSelect(Number(select.value)));
+
+        const initial = selectedCode || state.items[0].code;
+        onSelect(initial);
+      }
+
+      async function tryAutoLoad() {
+        try {
+          const res = await fetch("../naiyo-setsumei.json", { cache: "no-store" });
+          if (!res.ok) return;
+          const doc = await res.json();
+          renderAll(doc);
+        } catch (e) {
+          // ignore (likely file://)
+        }
+      }
+
+      document.getElementById("fileInput").addEventListener("change", async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const text = await file.text();
+        const doc = JSON.parse(text);
+        renderAll(doc);
+      });
+
+      tryAutoLoad();
+    </script>
+  </body>
+</html>

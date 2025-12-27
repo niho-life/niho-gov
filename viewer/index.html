@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>NIHO 予算PDF JSONビューア（試作）</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: rgba(255, 255, 255, 0.06);
+        --panel2: rgba(255, 255, 255, 0.10);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.65);
+        --accent: #7dd3fc;
+        --border: rgba(255, 255, 255, 0.16);
+        --chip: rgba(125, 211, 252, 0.12);
+      }
+
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Segoe UI",
+          Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        background: radial-gradient(1200px 600px at 20% 0%, rgba(125, 211, 252, 0.14), transparent 50%),
+          radial-gradient(1000px 600px at 90% 0%, rgba(167, 139, 250, 0.14), transparent 45%), var(--bg);
+        color: var(--text);
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      header {
+        position: sticky;
+        top: 0;
+        backdrop-filter: blur(10px);
+        background: rgba(11, 16, 32, 0.72);
+        border-bottom: 1px solid var(--border);
+        z-index: 10;
+      }
+
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 18px 16px;
+      }
+
+      .title {
+        display: flex;
+        gap: 14px;
+        align-items: baseline;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      h1 {
+        font-size: 18px;
+        margin: 0;
+        letter-spacing: 0.02em;
+      }
+
+      .subtitle {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 800px) {
+        .controls {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .control {
+        padding: 12px;
+      }
+
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      input[type="file"],
+      input[type="search"] {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        outline: none;
+      }
+
+      input[type="search"]::placeholder {
+        color: rgba(255, 255, 255, 0.45);
+      }
+
+      button.btn {
+        appearance: none;
+        border: 1px solid rgba(125, 211, 252, 0.35);
+        background: rgba(125, 211, 252, 0.12);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button.btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      button.btn:hover:not(:disabled) {
+        border-color: rgba(125, 211, 252, 0.6);
+        background: rgba(125, 211, 252, 0.18);
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .chip {
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(125, 211, 252, 0.25);
+        background: var(--chip);
+        font-size: 12px;
+        color: var(--text);
+      }
+
+      main {
+        padding-bottom: 40px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      details {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      summary {
+        cursor: pointer;
+        list-style: none;
+        padding: 12px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .summary-left {
+        display: flex;
+        gap: 10px;
+        align-items: baseline;
+        flex-wrap: wrap;
+      }
+
+      .badge {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.75);
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        padding: 4px 8px;
+        border-radius: 999px;
+      }
+
+      .name {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .dept {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .summary-right {
+        text-align: right;
+        min-width: 120px;
+      }
+
+      .money {
+        font-variant-numeric: tabular-nums;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .money-sub {
+        font-size: 11px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .body {
+        padding: 0 12px 12px 12px;
+        border-top: 1px solid var(--border);
+      }
+
+      .kv {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 8px 12px;
+        margin-top: 10px;
+      }
+      @media (max-width: 800px) {
+        .kv {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .k {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .v {
+        font-size: 13px;
+      }
+
+      .list {
+        margin: 0;
+        padding-left: 20px;
+      }
+      .list li {
+        margin: 6px 0;
+        color: rgba(255, 255, 255, 0.86);
+        font-size: 13px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      th,
+      td {
+        padding: 8px 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+        font-size: 12px;
+        vertical-align: top;
+      }
+
+      th {
+        text-align: left;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      td.amount {
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      .hint {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <div class="title">
+          <div>
+            <h1>NIHO 予算PDF JSONビューア（試作）</h1>
+            <div class="subtitle">PDF→JSON抽出結果を、ブラウザ上で検索・閲覧するための静的ページ</div>
+          </div>
+          <div class="subtitle" id="status">JSON未読み込み</div>
+        </div>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <div class="panel controls">
+        <div class="control">
+          <label for="file">JSONファイルを選択（ローカルでもOK）</label>
+          <input id="file" type="file" accept=".json,application/json" />
+          <div class="chips" id="chips"></div>
+          <div class="hint">
+            例：<code>NIHO/gov/議会費mini.all.json</code> を選択。<br />
+            このビューアはファイルをアップロードしません（ブラウザ内で読み込むだけ）。
+          </div>
+        </div>
+        <div class="control">
+          <label for="url">サーバー上のJSON（URL）</label>
+          <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px">
+            <input id="url" type="search" placeholder="../kamakura-fin.json" />
+            <button id="loadUrl" class="btn" type="button">読み込む</button>
+          </div>
+          <div class="hint">
+            例：<code>../kamakura-fin.json</code><br />
+            ※この機能は <code>http://</code> で開いているときに動きます（<code>file://</code> 直開きだとブラウザ制約で失敗します）。
+          </div>
+        </div>
+        <div class="control">
+          <label for="q">検索（事業名/担当課/分野/款項目 など）</label>
+          <input id="q" type="search" placeholder="例：議会 / 広報 / 職員給与費 / 市民自治 ..." />
+          <div class="hint">
+            表示対象は主に <code>type=project</code> のページです。<code>unknown</code> はテンプレ差分の可能性があります。
+          </div>
+        </div>
+        <div class="control">
+          <label>CSVエクスポート</label>
+          <button id="exportCsv" class="btn" type="button" disabled>CSV出力</button>
+          <div class="hint">現在の検索条件で絞り込まれた <code>type=project</code> をCSVにします（UTF-8 BOM付き）。</div>
+        </div>
+      </div>
+
+      <div class="grid" id="list"></div>
+    </main>
+
+    <script>
+      const state = {
+        doc: null,
+        q: "",
+        loadedFrom: null,
+      };
+
+      const elFile = document.getElementById("file");
+      const elUrl = document.getElementById("url");
+      const elLoadUrl = document.getElementById("loadUrl");
+      const elQ = document.getElementById("q");
+      const elList = document.getElementById("list");
+      const elStatus = document.getElementById("status");
+      const elChips = document.getElementById("chips");
+      const elExportCsv = document.getElementById("exportCsv");
+
+      // Default for hosted usage (works when served over http://).
+      elUrl.value = "../kamakura-fin.json";
+
+      function yenK(amount, unit) {
+        if (amount === null || amount === undefined) return "";
+        if (typeof amount !== "number") return String(amount);
+        const formatted = amount.toLocaleString("ja-JP");
+        return unit ? `${formatted} ${unit}` : formatted;
+      }
+
+      function safeStr(v) {
+        if (v === null || v === undefined) return "";
+        return String(v);
+      }
+
+      function textForSearch(page) {
+        const parsed = page.parsed || {};
+        const cat = parsed.category || {};
+        const kuan = cat.kuan ? `${cat.kuan.code} ${cat.kuan.name}` : "";
+        const kou = cat.kou ? `${cat.kou.code} ${cat.kou.name}` : "";
+        const moku = cat.moku ? `${cat.moku.code} ${cat.moku.name}` : "";
+        return [
+          safeStr(page.type),
+          safeStr(parsed.name),
+          safeStr(parsed.department),
+          safeStr(parsed.field),
+          safeStr(parsed.policy),
+          safeStr(parsed.prev_year_page),
+          kuan,
+          kou,
+          moku,
+          safeStr(page.text),
+        ]
+          .join(" ")
+          .toLowerCase();
+      }
+
+      function makeChips(doc) {
+        const pages = doc.pages || [];
+        const types = {};
+        let ocrCount = 0;
+        let reviewCount = 0;
+        for (const p of pages) {
+          types[p.type] = (types[p.type] || 0) + 1;
+          if (p.extraction && p.extraction.used_ocr) ocrCount += 1;
+          const flags = Array.isArray(p.quality_flags) ? p.quality_flags : [];
+          if (flags.includes("total_mismatch_details") || flags.includes("general_mismatch_details") || flags.includes("total_display_is_fallback")) {
+            reviewCount += 1;
+          }
+        }
+        const chips = [
+          `pages: ${pages.length}`,
+          ...Object.entries(types)
+            .sort((a, b) => b[1] - a[1])
+            .map(([k, v]) => `${k}: ${v}`),
+          `ocr_used: ${ocrCount}`,
+          `review: ${reviewCount}`,
+        ];
+        elChips.innerHTML = chips.map((c) => `<span class="chip">${c}</span>`).join("");
+      }
+
+      function getProjectPagesFiltered() {
+        if (!state.doc) return [];
+        const q = state.q.trim().toLowerCase();
+        const pages = (state.doc.pages || []).filter((p) => p.type === "project");
+        return q ? pages.filter((p) => textForSearch(p).includes(q)) : pages;
+      }
+
+      function csvEscape(value) {
+        if (value === null || value === undefined) return "";
+        const s = String(value);
+        if (/[\",\n\r]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
+        return s;
+      }
+
+      function toCsv(rows) {
+        return rows.map((row) => row.map(csvEscape).join(",")).join("\r\n") + "\r\n";
+      }
+
+      function downloadCsv(filename, csvText) {
+        // Add UTF-8 BOM so Excel (especially on Windows) opens Japanese properly.
+        const blob = new Blob(["\ufeff", csvText], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function budgetDetailsToText(budgetDetails) {
+        if (!Array.isArray(budgetDetails) || !budgetDetails.length) return "";
+        return budgetDetails
+          .map((r) => {
+            const section = r.section ?? "";
+            const item = r.item ?? "";
+            const qty = r.quantity ? `（${r.quantity}）` : "";
+            const amt = r.amount ?? "";
+            return `${section}:${item}${qty}:${amt}`;
+          })
+          .join(" | ");
+      }
+
+      function buildCsvRows(pages) {
+        const header = [
+          "source_key",
+          "source_label",
+          "source_pdf",
+          "source_page",
+          "category_kuan_code",
+          "category_kuan_name",
+          "category_kou_code",
+          "category_kou_name",
+          "category_moku_code",
+          "category_moku_name",
+          "field",
+          "policy",
+          "project_name",
+          "department",
+          "prev_year_page",
+          "budget_unit",
+          "budget_total_display",
+          "budget_total_display_source",
+          "budget_total_raw",
+          "budget_general_raw",
+          "budget_details_sum",
+          "budget_details_missing_amounts",
+          "quality_flags",
+          "purpose_target",
+          "purpose_intent",
+          "purpose_effect",
+          "description",
+          "budget_details",
+        ];
+
+        const rows = [header];
+        for (const page of pages) {
+          const parsed = page.parsed || {};
+          const budget = parsed.budget || {};
+          const revenue = budget.revenue || {};
+          const cat = parsed.category || {};
+          const src = page.source || {};
+          const flags = Array.isArray(page.quality_flags) ? page.quality_flags : [];
+          const purpose = parsed.purpose || {};
+          const desc = Array.isArray(parsed.description) ? parsed.description.join(" / ") : "";
+
+          rows.push([
+            src.key || "",
+            src.label || "",
+            src.pdf || "",
+            page.source_page ?? "",
+            cat.kuan ? cat.kuan.code : "",
+            cat.kuan ? cat.kuan.name : "",
+            cat.kou ? cat.kou.code : "",
+            cat.kou ? cat.kou.name : "",
+            cat.moku ? cat.moku.code : "",
+            cat.moku ? cat.moku.name : "",
+            parsed.field || "",
+            parsed.policy || "",
+            parsed.name || "",
+            parsed.department || "",
+            parsed.prev_year_page || "",
+            budget.unit || "",
+            budget.total_display ?? budget.total ?? "",
+            budget.total_display_source || "",
+            budget.total_raw ?? "",
+            revenue.general ?? budget.general_raw ?? "",
+            budget.details_sum ?? "",
+            budget.details_missing_amounts ?? "",
+            flags.join(" | "),
+            purpose.target || "",
+            purpose.intent || "",
+            purpose.effect || "",
+            desc,
+            budgetDetailsToText(parsed.budget_details),
+          ]);
+        }
+        return rows;
+      }
+
+      function render() {
+        elList.innerHTML = "";
+        if (!state.doc) return;
+
+        const pages = (state.doc.pages || []).filter((p) => p.type === "project");
+        const filtered = getProjectPagesFiltered();
+
+        elStatus.textContent = `project: ${filtered.length} / ${pages.length}`;
+        elExportCsv.disabled = filtered.length === 0;
+        elExportCsv.textContent = `CSV出力（${filtered.length}件）`;
+
+        const frag = document.createDocumentFragment();
+        for (const page of filtered) {
+          const parsed = page.parsed || {};
+          const budget = parsed.budget || {};
+          const revenue = budget.revenue || {};
+
+          const name = parsed.name || "(名称不明)";
+          const dept = parsed.department || "";
+          const unit = budget.unit || "";
+          const total = budget.total_display ?? budget.total;
+          const totalRaw = budget.total_raw ?? null;
+          const detailsSum = budget.details_sum ?? null;
+          const totalSource = budget.total_display_source || "";
+          const general = revenue.general ?? budget.general_raw ?? null;
+          const generalRaw = budget.general_raw ?? null;
+          const cat = parsed.category || {};
+          const catText = cat.kuan ? `款${cat.kuan.code}:${cat.kuan.name}` : "";
+          const flags = Array.isArray(page.quality_flags) ? page.quality_flags : [];
+
+          const sourceLabelMap = {
+            details_sum: "内訳合計",
+            details_sum_weak: "内訳合計（弱）",
+            general: "一般財源",
+            table_total: "表（事業費）",
+            unknown: "",
+          };
+          const totalSourceLabel = sourceLabelMap[totalSource] || totalSource;
+          const showFallback = totalSource && totalSource !== "table_total";
+
+          const details = document.createElement("details");
+          const summary = document.createElement("summary");
+          summary.innerHTML = `
+            <div class="summary-left">
+              <span class="badge">p.${page.source_page}</span>
+              ${catText ? `<span class="badge">${catText}</span>` : ""}
+              <span class="name">${escapeHtml(name)}</span>
+              ${dept ? `<span class="dept">${escapeHtml(dept)}</span>` : ""}
+            </div>
+            <div class="summary-right">
+              <div class="money">${total ? yenK(total, unit) : ""}</div>
+              <div class="money-sub">
+                ${showFallback && totalSourceLabel ? `事業費は${escapeHtml(totalSourceLabel)}で補正` : ""}
+                ${general ? `${showFallback && totalSourceLabel ? " / " : ""}一般財源 ${yenK(general, unit)}` : ""}
+              </div>
+            </div>
+          `;
+          details.appendChild(summary);
+
+          const body = document.createElement("div");
+          body.className = "body";
+
+          const kv = document.createElement("div");
+          kv.className = "kv";
+          kv.innerHTML = `
+            <div class="k">分野 / 施策</div>
+            <div class="v">${escapeHtml([parsed.field, parsed.policy].filter(Boolean).join(" / "))}</div>
+            <div class="k">令和6年度該当</div>
+            <div class="v">${escapeHtml(parsed.prev_year_page || "")}</div>
+            <div class="k">抽出</div>
+            <div class="v">${page.extraction && page.extraction.used_ocr ? "OCR（tesseract）使用" : "pdftotext（埋め込みテキスト）"}</div>
+            <div class="k">事業費（表示）</div>
+            <div class="v">${total !== null && total !== undefined ? escapeHtml(yenK(total, unit)) : ""}${totalSourceLabel ? ` <span class="dept">(${escapeHtml(totalSourceLabel)})</span>` : ""}</div>
+            <div class="k">内訳合計</div>
+            <div class="v">${detailsSum !== null && detailsSum !== undefined ? escapeHtml(yenK(detailsSum, unit)) : ""}</div>
+            <div class="k">事業費（表抽出）</div>
+            <div class="v">${totalRaw !== null && totalRaw !== undefined ? escapeHtml(yenK(totalRaw, unit)) : ""}</div>
+            <div class="k">一般財源（表抽出）</div>
+            <div class="v">${generalRaw !== null && generalRaw !== undefined ? escapeHtml(yenK(generalRaw, unit)) : ""}</div>
+            <div class="k">フラグ</div>
+            <div class="v">${flags.length ? flags.map(escapeHtml).join(", ") : ""}</div>
+          `;
+          body.appendChild(kv);
+
+          if (parsed.purpose) {
+            const purpose = parsed.purpose;
+            const kv2 = document.createElement("div");
+            kv2.className = "kv";
+            kv2.innerHTML = `
+              <div class="k">目的（対象）</div><div class="v">${escapeHtml(purpose.target || "")}</div>
+              <div class="k">目的（意図）</div><div class="v">${escapeHtml(purpose.intent || "")}</div>
+              <div class="k">目的（効果）</div><div class="v">${escapeHtml(purpose.effect || "")}</div>
+            `;
+            body.appendChild(kv2);
+          }
+
+          if (Array.isArray(parsed.description) && parsed.description.length) {
+            const ul = document.createElement("ul");
+            ul.className = "list";
+            for (const d of parsed.description) {
+              const li = document.createElement("li");
+              li.textContent = d;
+              ul.appendChild(li);
+            }
+            body.appendChild(ul);
+          }
+
+          if (Array.isArray(parsed.budget_details) && parsed.budget_details.length) {
+            const table = document.createElement("table");
+            table.innerHTML = `<thead><tr><th>節</th><th>項目</th><th class=\"amount\">金額（千円）</th></tr></thead>`;
+            const tbody = document.createElement("tbody");
+            for (const row of parsed.budget_details) {
+              const tr = document.createElement("tr");
+              const section = row.section ?? "";
+              const item = row.item ?? "";
+              const qty = row.quantity ? `（${row.quantity}）` : "";
+              const amount = row.amount ?? null;
+              tr.innerHTML = `
+                <td>${escapeHtml(String(section))}</td>
+                <td>${escapeHtml(item)}${qty ? ` <span class=\"dept\">${escapeHtml(qty)}</span>` : ""}</td>
+                <td class="amount">${amount !== null ? escapeHtml(String(amount.toLocaleString("ja-JP"))) : ""}</td>
+              `;
+              tbody.appendChild(tr);
+            }
+            table.appendChild(tbody);
+            body.appendChild(table);
+          }
+
+          details.appendChild(body);
+          frag.appendChild(details);
+        }
+        elList.appendChild(frag);
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      elFile.addEventListener("change", async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        elStatus.textContent = "読み込み中...";
+        try {
+          const text = await file.text();
+          const doc = JSON.parse(text);
+          state.doc = doc;
+          state.loadedFrom = { type: "file", name: file.name };
+          makeChips(doc);
+          render();
+        } catch (err) {
+          console.error(err);
+          elStatus.textContent = "JSON読み込み失敗";
+          elList.innerHTML = `<div class="panel" style="padding:12px">JSONの読み込みに失敗しました。ファイル形式を確認してください。</div>`;
+        }
+      });
+
+      elLoadUrl.addEventListener("click", async () => {
+        const url = (elUrl.value || "").trim();
+        if (!url) return;
+        elStatus.textContent = "読み込み中...";
+        try {
+          const res = await fetch(url, { cache: "no-store" });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const doc = await res.json();
+          state.doc = doc;
+          state.loadedFrom = { type: "url", url };
+          makeChips(doc);
+          render();
+        } catch (err) {
+          console.error(err);
+          elStatus.textContent = "JSON読み込み失敗";
+          elList.innerHTML = `<div class="panel" style="padding:12px">URLからJSONの読み込みに失敗しました。<br/>file:// 直開きの場合はブラウザ制約で失敗します。ローカルサーバーで開いてください。</div>`;
+        }
+      });
+
+      elQ.addEventListener("input", () => {
+        state.q = elQ.value;
+        render();
+      });
+
+      elExportCsv.addEventListener("click", () => {
+        if (!state.doc) return;
+        const filtered = getProjectPagesFiltered();
+        if (!filtered.length) return;
+
+        const rows = buildCsvRows(filtered);
+        const csv = toCsv(rows);
+
+        const base =
+          state.loadedFrom?.type === "file"
+            ? state.loadedFrom.name.replace(/\\.json$/i, "")
+            : state.loadedFrom?.type === "url"
+              ? (state.loadedFrom.url.split("/").pop() || "export").replace(/\\.json$/i, "")
+              : "export";
+        downloadCsv(`${base}.projects.csv`, csv);
+      });
+    </script>
+  </body>
+</html>

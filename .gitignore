@@ -1,0 +1,29 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+# Generated data (reproducible from PDFs / scripts)
+*.all.json
+*.pages*.json
+*.projects.csv
+kamakura-fin.json
+naiyo-setsumei.json
+
+# Source PDFs are large and may have copyright/redistribution constraints
+*.pdf
+
+# Credentials / secrets (never commit)
+fabled-opus-*.json
+credentials*.json
+
+# Cloud Vision / OCR pipelines: keep source, ignore environments and outputs
+kamakura-budget-ocr-v1/.venv/
+kamakura-budget-ocr-v1/output/
+kamakura-budget-ocr-v1/logs/
+
+kamakura-budget-ocr-v2/.venv/
+kamakura-budget-ocr-v2/output/
+kamakura-budget-ocr-v2/logs/
+kamakura-budget-ocr-v2/input/
+kamakura-budget-ocr-v2/__pycache__/
+
