@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>NIHO 予算PDF JSONビューア（試作）</title>
+    <title>NIHO 鎌倉市 予算ビューア（試作）</title>
     <style>
       :root {
         --bg: #0b1020;
@@ -14,6 +14,8 @@
         --accent: #7dd3fc;
         --border: rgba(255, 255, 255, 0.16);
         --chip: rgba(125, 211, 252, 0.12);
+        --danger: #fb7185;
+        --ok: #34d399;
       }
 
       body {
@@ -39,17 +41,22 @@
       }
 
       .wrap {
-        max-width: 1100px;
+        max-width: 1180px;
         margin: 0 auto;
         padding: 18px 16px;
       }
 
       .title {
-        display: flex;
-        gap: 14px;
-        align-items: baseline;
-        justify-content: space-between;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        align-items: center;
+      }
+      @media (max-width: 900px) {
+        .title {
+          grid-template-columns: 1fr;
+          justify-items: start;
+        }
       }
 
       h1 {
@@ -61,50 +68,13 @@
       .subtitle {
         font-size: 13px;
         color: var(--muted);
+        margin-top: 6px;
       }
 
       .panel {
         background: var(--panel);
         border: 1px solid var(--border);
         border-radius: 12px;
-      }
-
-      .controls {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-      }
-      @media (max-width: 800px) {
-        .controls {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      .control {
-        padding: 12px;
-      }
-
-      label {
-        display: block;
-        font-size: 12px;
-        color: var(--muted);
-        margin-bottom: 6px;
-      }
-
-      input[type="file"],
-      input[type="search"] {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 10px 12px;
-        border-radius: 10px;
-        border: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.06);
-        color: var(--text);
-        outline: none;
-      }
-
-      input[type="search"]::placeholder {
-        color: rgba(255, 255, 255, 0.45);
       }
 
       button.btn {
@@ -115,7 +85,7 @@
         padding: 10px 12px;
         border-radius: 10px;
         font-size: 13px;
-        font-weight: 600;
+        font-weight: 700;
         cursor: pointer;
       }
       button.btn:disabled {
@@ -126,6 +96,97 @@
         border-color: rgba(125, 211, 252, 0.6);
         background: rgba(125, 211, 252, 0.18);
       }
+      button.btn.sm {
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+
+      input[type="search"],
+      select {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        outline: none;
+      }
+      input[type="search"]::placeholder {
+        color: rgba(255, 255, 255, 0.45);
+      }
+
+      .tabs {
+        display: inline-flex;
+        gap: 6px;
+        padding: 4px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .tab {
+        border: 0;
+        border-radius: 10px;
+        padding: 8px 10px;
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.78);
+        background: transparent;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .tab[aria-selected="true"] {
+        color: var(--text);
+        background: rgba(125, 211, 252, 0.16);
+        border: 1px solid rgba(125, 211, 252, 0.25);
+      }
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.06);
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.80);
+      }
+      .pill b {
+        color: var(--text);
+      }
+
+      .controlsGrid {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 900px) {
+        .controlsGrid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .control {
+        padding: 12px;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      .hint {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
 
       .chips {
         display: flex;
@@ -133,7 +194,6 @@
         gap: 8px;
         margin-top: 10px;
       }
-
       .chip {
         padding: 6px 10px;
         border-radius: 999px;
@@ -147,6 +207,7 @@
         padding-bottom: 40px;
       }
 
+      /* Detail list */
       .grid {
         display: grid;
         grid-template-columns: 1fr;
@@ -193,7 +254,7 @@
 
       .name {
         font-size: 14px;
-        font-weight: 600;
+        font-weight: 700;
       }
 
       .dept {
@@ -209,7 +270,7 @@
       .money {
         font-variant-numeric: tabular-nums;
         font-size: 13px;
-        font-weight: 600;
+        font-weight: 700;
       }
 
       .money-sub {
@@ -253,6 +314,7 @@
         font-size: 13px;
       }
 
+      /* Tables (shared) */
       table {
         width: 100%;
         border-collapse: collapse;
@@ -270,8 +332,15 @@
 
       th {
         text-align: left;
-        color: var(--muted);
-        font-weight: 600;
+        color: rgba(255, 255, 255, 0.78);
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      th.sticky {
+        position: sticky;
+        top: 0;
+        z-index: 5;
       }
 
       td.amount {
@@ -279,11 +348,107 @@
         white-space: nowrap;
       }
 
-      .hint {
-        margin-top: 12px;
-        color: var(--muted);
+      tr.sel td {
+        background: rgba(125, 211, 252, 0.10);
+      }
+
+      /* Overview layout */
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 14px;
+      }
+      @media (max-width: 1100px) {
+        .grid2 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        padding: 12px;
+      }
+      .card h2 {
+        margin: 0 0 10px 0;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.88);
+      }
+
+      .row2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (max-width: 520px) {
+        .row2 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .kvbox {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 10px 12px;
+      }
+      .kvkey {
         font-size: 12px;
-        line-height: 1.6;
+        color: var(--muted);
+      }
+      .kvval {
+        margin-top: 6px;
+        font-size: 16px;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+      }
+      .kvval small {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        margin-left: 6px;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .lg {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+
+      .tooltip {
+        position: fixed;
+        pointer-events: none;
+        background: rgba(11, 16, 32, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 12px;
+        color: var(--text);
+        transform: translate(12px, 12px);
+        z-index: 1000;
+        max-width: 320px;
+        display: none;
+      }
+      .tooltip .t {
+        font-weight: 800;
+      }
+      .tooltip .m {
+        margin-top: 6px;
+        color: var(--muted);
+        line-height: 1.55;
       }
     </style>
   </head>
@@ -292,452 +457,1116 @@
       <div class="wrap">
         <div class="title">
           <div>
-            <h1>NIHO 予算PDF JSONビューア（試作）</h1>
-            <div class="subtitle">PDF→JSON抽出結果を、ブラウザ上で検索・閲覧するための静的ページ</div>
+            <h1>NIHO 鎌倉市 予算ビューア（試作）</h1>
+            <div class="subtitle">歳出全体像（俯瞰）と、費用詳細（事業ページ）をタブで切り替え</div>
           </div>
-          <div class="subtitle" id="status">JSON未読み込み</div>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end">
+            <div class="tabs" role="tablist" aria-label="ページ切り替え">
+              <button class="tab" id="tabBtnDetail" role="tab" aria-selected="true" aria-controls="tabDetail">
+                費用詳細
+              </button>
+              <button class="tab" id="tabBtnOverview" role="tab" aria-selected="false" aria-controls="tabOverview">
+                歳出全体像
+              </button>
+            </div>
+            <div class="pill">
+              <span>データ:</span>
+              <b id="appStatus">未ロード</b>
+            </div>
+          </div>
         </div>
       </div>
     </header>
 
     <main class="wrap">
-      <div class="panel controls">
-        <div class="control">
-          <label for="file">JSONファイルを選択（ローカルでもOK）</label>
-          <input id="file" type="file" accept=".json,application/json" />
-          <div class="chips" id="chips"></div>
-          <div class="hint">
-            例：<code>NIHO/gov/議会費mini.all.json</code> を選択。<br />
-            このビューアはファイルをアップロードしません（ブラウザ内で読み込むだけ）。
-          </div>
-        </div>
-        <div class="control">
-          <label for="url">サーバー上のJSON（URL）</label>
-          <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px">
-            <input id="url" type="search" placeholder="../kamakura-fin.json" />
-            <button id="loadUrl" class="btn" type="button">読み込む</button>
-          </div>
-          <div class="hint">
-            例：<code>../kamakura-fin.json</code><br />
-            ※この機能は <code>http://</code> で開いているときに動きます（<code>file://</code> 直開きだとブラウザ制約で失敗します）。
-          </div>
-        </div>
-        <div class="control">
-          <label for="q">検索（事業名/担当課/分野/款項目 など）</label>
-          <input id="q" type="search" placeholder="例：議会 / 広報 / 職員給与費 / 市民自治 ..." />
-          <div class="hint">
-            表示対象は主に <code>type=project</code> のページです。<code>unknown</code> はテンプレ差分の可能性があります。
-          </div>
-        </div>
-        <div class="control">
-          <label>CSVエクスポート</label>
-          <button id="exportCsv" class="btn" type="button" disabled>CSV出力</button>
-          <div class="hint">現在の検索条件で絞り込まれた <code>type=project</code> をCSVにします（UTF-8 BOM付き）。</div>
-        </div>
-      </div>
-
-      <div class="grid" id="list"></div>
-    </main>
-
-    <script>
-      const state = {
-        doc: null,
-        q: "",
-        loadedFrom: null,
-      };
-
-      const elFile = document.getElementById("file");
-      const elUrl = document.getElementById("url");
-      const elLoadUrl = document.getElementById("loadUrl");
-      const elQ = document.getElementById("q");
-      const elList = document.getElementById("list");
-      const elStatus = document.getElementById("status");
-      const elChips = document.getElementById("chips");
-      const elExportCsv = document.getElementById("exportCsv");
-
-      // Default for hosted usage (works when served over http://).
-      elUrl.value = "../kamakura-fin.json";
-
-      function yenK(amount, unit) {
-        if (amount === null || amount === undefined) return "";
-        if (typeof amount !== "number") return String(amount);
-        const formatted = amount.toLocaleString("ja-JP");
-        return unit ? `${formatted} ${unit}` : formatted;
-      }
-
-      function safeStr(v) {
-        if (v === null || v === undefined) return "";
-        return String(v);
-      }
-
-      function textForSearch(page) {
-        const parsed = page.parsed || {};
-        const cat = parsed.category || {};
-        const kuan = cat.kuan ? `${cat.kuan.code} ${cat.kuan.name}` : "";
-        const kou = cat.kou ? `${cat.kou.code} ${cat.kou.name}` : "";
-        const moku = cat.moku ? `${cat.moku.code} ${cat.moku.name}` : "";
-        return [
-          safeStr(page.type),
-          safeStr(parsed.name),
-          safeStr(parsed.department),
-          safeStr(parsed.field),
-          safeStr(parsed.policy),
-          safeStr(parsed.prev_year_page),
-          kuan,
-          kou,
-          moku,
-          safeStr(page.text),
-        ]
-          .join(" ")
-          .toLowerCase();
-      }
-
-      function makeChips(doc) {
-        const pages = doc.pages || [];
-        const types = {};
-        let ocrCount = 0;
-        let reviewCount = 0;
-        for (const p of pages) {
-          types[p.type] = (types[p.type] || 0) + 1;
-          if (p.extraction && p.extraction.used_ocr) ocrCount += 1;
-          const flags = Array.isArray(p.quality_flags) ? p.quality_flags : [];
-          if (flags.includes("total_mismatch_details") || flags.includes("general_mismatch_details") || flags.includes("total_display_is_fallback")) {
-            reviewCount += 1;
-          }
-        }
-        const chips = [
-          `pages: ${pages.length}`,
-          ...Object.entries(types)
-            .sort((a, b) => b[1] - a[1])
-            .map(([k, v]) => `${k}: ${v}`),
-          `ocr_used: ${ocrCount}`,
-          `review: ${reviewCount}`,
-        ];
-        elChips.innerHTML = chips.map((c) => `<span class="chip">${c}</span>`).join("");
-      }
-
-      function getProjectPagesFiltered() {
-        if (!state.doc) return [];
-        const q = state.q.trim().toLowerCase();
-        const pages = (state.doc.pages || []).filter((p) => p.type === "project");
-        return q ? pages.filter((p) => textForSearch(p).includes(q)) : pages;
-      }
-
-      function csvEscape(value) {
-        if (value === null || value === undefined) return "";
-        const s = String(value);
-        if (/[\",\n\r]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
-        return s;
-      }
-
-      function toCsv(rows) {
-        return rows.map((row) => row.map(csvEscape).join(",")).join("\r\n") + "\r\n";
-      }
-
-      function downloadCsv(filename, csvText) {
-        // Add UTF-8 BOM so Excel (especially on Windows) opens Japanese properly.
-        const blob = new Blob(["\ufeff", csvText], { type: "text/csv;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      }
-
-      function budgetDetailsToText(budgetDetails) {
-        if (!Array.isArray(budgetDetails) || !budgetDetails.length) return "";
-        return budgetDetails
-          .map((r) => {
-            const section = r.section ?? "";
-            const item = r.item ?? "";
-            const qty = r.quantity ? `（${r.quantity}）` : "";
-            const amt = r.amount ?? "";
-            return `${section}:${item}${qty}:${amt}`;
-          })
-          .join(" | ");
-      }
-
-      function buildCsvRows(pages) {
-        const header = [
-          "source_key",
-          "source_label",
-          "source_pdf",
-          "source_page",
-          "category_kuan_code",
-          "category_kuan_name",
-          "category_kou_code",
-          "category_kou_name",
-          "category_moku_code",
-          "category_moku_name",
-          "field",
-          "policy",
-          "project_name",
-          "department",
-          "prev_year_page",
-          "budget_unit",
-          "budget_total_display",
-          "budget_total_display_source",
-          "budget_total_raw",
-          "budget_general_raw",
-          "budget_details_sum",
-          "budget_details_missing_amounts",
-          "quality_flags",
-          "purpose_target",
-          "purpose_intent",
-          "purpose_effect",
-          "description",
-          "budget_details",
-        ];
-
-        const rows = [header];
-        for (const page of pages) {
-          const parsed = page.parsed || {};
-          const budget = parsed.budget || {};
-          const revenue = budget.revenue || {};
-          const cat = parsed.category || {};
-          const src = page.source || {};
-          const flags = Array.isArray(page.quality_flags) ? page.quality_flags : [];
-          const purpose = parsed.purpose || {};
-          const desc = Array.isArray(parsed.description) ? parsed.description.join(" / ") : "";
-
-          rows.push([
-            src.key || "",
-            src.label || "",
-            src.pdf || "",
-            page.source_page ?? "",
-            cat.kuan ? cat.kuan.code : "",
-            cat.kuan ? cat.kuan.name : "",
-            cat.kou ? cat.kou.code : "",
-            cat.kou ? cat.kou.name : "",
-            cat.moku ? cat.moku.code : "",
-            cat.moku ? cat.moku.name : "",
-            parsed.field || "",
-            parsed.policy || "",
-            parsed.name || "",
-            parsed.department || "",
-            parsed.prev_year_page || "",
-            budget.unit || "",
-            budget.total_display ?? budget.total ?? "",
-            budget.total_display_source || "",
-            budget.total_raw ?? "",
-            revenue.general ?? budget.general_raw ?? "",
-            budget.details_sum ?? "",
-            budget.details_missing_amounts ?? "",
-            flags.join(" | "),
-            purpose.target || "",
-            purpose.intent || "",
-            purpose.effect || "",
-            desc,
-            budgetDetailsToText(parsed.budget_details),
-          ]);
-        }
-        return rows;
-      }
-
-      function render() {
-        elList.innerHTML = "";
-        if (!state.doc) return;
-
-        const pages = (state.doc.pages || []).filter((p) => p.type === "project");
-        const filtered = getProjectPagesFiltered();
-
-        elStatus.textContent = `project: ${filtered.length} / ${pages.length}`;
-        elExportCsv.disabled = filtered.length === 0;
-        elExportCsv.textContent = `CSV出力（${filtered.length}件）`;
-
-        const frag = document.createDocumentFragment();
-        for (const page of filtered) {
-          const parsed = page.parsed || {};
-          const budget = parsed.budget || {};
-          const revenue = budget.revenue || {};
-
-          const name = parsed.name || "(名称不明)";
-          const dept = parsed.department || "";
-          const unit = budget.unit || "";
-          const total = budget.total_display ?? budget.total;
-          const totalRaw = budget.total_raw ?? null;
-          const detailsSum = budget.details_sum ?? null;
-          const totalSource = budget.total_display_source || "";
-          const general = revenue.general ?? budget.general_raw ?? null;
-          const generalRaw = budget.general_raw ?? null;
-          const cat = parsed.category || {};
-          const catText = cat.kuan ? `款${cat.kuan.code}:${cat.kuan.name}` : "";
-          const flags = Array.isArray(page.quality_flags) ? page.quality_flags : [];
-
-          const sourceLabelMap = {
-            details_sum: "内訳合計",
-            details_sum_weak: "内訳合計（弱）",
-            general: "一般財源",
-            table_total: "表（事業費）",
-            unknown: "",
-          };
-          const totalSourceLabel = sourceLabelMap[totalSource] || totalSource;
-          const showFallback = totalSource && totalSource !== "table_total";
-
-          const details = document.createElement("details");
-          const summary = document.createElement("summary");
-          summary.innerHTML = `
-            <div class="summary-left">
-              <span class="badge">p.${page.source_page}</span>
-              ${catText ? `<span class="badge">${catText}</span>` : ""}
-              <span class="name">${escapeHtml(name)}</span>
-              ${dept ? `<span class="dept">${escapeHtml(dept)}</span>` : ""}
+      <section id="tabDetail" class="tab-panel active" role="tabpanel" aria-labelledby="tabBtnDetail">
+        <div class="panel controlsGrid">
+          <div class="control">
+            <label>費用詳細（事業ページ）</label>
+            <div class="chips" id="chipsDetail"></div>
+            <div class="subtitle" style="margin-top: 8px" id="detailStatus">読み込み中...</div>
+            <div class="hint">
+              デフォルトで <code>../kamakura-fin.json</code> を読み込みます。<br />
+              ※ <code>file://</code> 直開きはブラウザ制約で読み込みに失敗します（HTTPサーバで開いてください）。
             </div>
-            <div class="summary-right">
-              <div class="money">${total ? yenK(total, unit) : ""}</div>
-              <div class="money-sub">
-                ${showFallback && totalSourceLabel ? `事業費は${escapeHtml(totalSourceLabel)}で補正` : ""}
-                ${general ? `${showFallback && totalSourceLabel ? " / " : ""}一般財源 ${yenK(general, unit)}` : ""}
+          </div>
+          <div class="control">
+            <label for="qDetail">検索（事業名/担当課/分野/款項目 など）</label>
+            <input id="qDetail" type="search" placeholder="例：議会 / 消防 / 民生 / 職員給与費 ..." />
+            <div class="hint">表示対象は <code>type=project</code> のみです。</div>
+          </div>
+          <div class="control">
+            <label>CSVエクスポート</label>
+            <button id="exportCsv" class="btn" type="button" disabled>CSV出力</button>
+            <div class="hint">現在の検索条件で絞り込まれた <code>type=project</code> をCSVにします（UTF-8 BOM付き）。</div>
+          </div>
+          <div class="control">
+            <label>ヒント</label>
+            <div class="hint">
+              <code>source_key</code> で費目（議会費/消防費など）を区別できます。<br />
+              <code>quality_flags</code> に mismatch が立っているページは要確認です。
+            </div>
+          </div>
+        </div>
+
+        <div class="grid" id="listDetail"></div>
+      </section>
+
+      <section id="tabOverview" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnOverview">
+        <div class="panel controlsGrid">
+          <div class="control">
+            <label>歳出全体像（俯瞰）</label>
+            <div class="subtitle" id="overviewStatus">読み込み中...</div>
+            <div class="hint">
+              デフォルトで <code>../naiyo-setsumei.json</code> を読み込みます（<code>naiyo-setsumei.pdf</code> 由来）。
+            </div>
+          </div>
+          <div class="control">
+            <label for="kamokuSelect">款を選択（性質別の内訳を表示）</label>
+            <select id="kamokuSelect" disabled></select>
+            <div class="hint">円グラフの扇形をクリックしても切り替えできます。金額は <b>千円</b> 単位（億円も併記）。</div>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <section class="panel card">
+            <h2>歳出（款別）</h2>
+            <div class="row2" style="align-items: center">
+              <div id="donutWrap"></div>
+              <div>
+                <div class="row2">
+                  <div class="kvbox">
+                    <div class="kvkey">一般会計 歳出合計</div>
+                    <div class="kvval" id="totalCurrent">-</div>
+                  </div>
+                  <div class="kvbox">
+                    <div class="kvkey">前年差（合計）</div>
+                    <div class="kvval" id="totalDiff">-</div>
+                  </div>
+                </div>
+                <div class="hint" id="metaHint">-</div>
               </div>
             </div>
-          `;
-          details.appendChild(summary);
+            <div id="donutLegend" class="legend"></div>
+          </section>
 
-          const body = document.createElement("div");
-          body.className = "body";
+          <section class="panel card">
+            <h2>前年差（款別）</h2>
+            <div id="diffChartWrap"></div>
+            <div class="hint">0を基準に、プラスは右・マイナスは左に伸びます。</div>
+          </section>
+        </div>
 
-          const kv = document.createElement("div");
-          kv.className = "kv";
-          kv.innerHTML = `
-            <div class="k">分野 / 施策</div>
-            <div class="v">${escapeHtml([parsed.field, parsed.policy].filter(Boolean).join(" / "))}</div>
-            <div class="k">令和6年度該当</div>
-            <div class="v">${escapeHtml(parsed.prev_year_page || "")}</div>
-            <div class="k">抽出</div>
-            <div class="v">${page.extraction && page.extraction.used_ocr ? "OCR（tesseract）使用" : "pdftotext（埋め込みテキスト）"}</div>
-            <div class="k">事業費（表示）</div>
-            <div class="v">${total !== null && total !== undefined ? escapeHtml(yenK(total, unit)) : ""}${totalSourceLabel ? ` <span class="dept">(${escapeHtml(totalSourceLabel)})</span>` : ""}</div>
-            <div class="k">内訳合計</div>
-            <div class="v">${detailsSum !== null && detailsSum !== undefined ? escapeHtml(yenK(detailsSum, unit)) : ""}</div>
-            <div class="k">事業費（表抽出）</div>
-            <div class="v">${totalRaw !== null && totalRaw !== undefined ? escapeHtml(yenK(totalRaw, unit)) : ""}</div>
-            <div class="k">一般財源（表抽出）</div>
-            <div class="v">${generalRaw !== null && generalRaw !== undefined ? escapeHtml(yenK(generalRaw, unit)) : ""}</div>
-            <div class="k">フラグ</div>
-            <div class="v">${flags.length ? flags.map(escapeHtml).join(", ") : ""}</div>
-          `;
-          body.appendChild(kv);
+        <div class="grid2">
+          <section class="panel card">
+            <h2>性質別（選択した款の内訳）</h2>
+            <div id="natureWrap"></div>
+            <div class="hint">「計」は款別合計で、p.7（歳出総括表）の金額と一致することを検証済みです。</div>
+          </section>
 
-          if (parsed.purpose) {
-            const purpose = parsed.purpose;
-            const kv2 = document.createElement("div");
-            kv2.className = "kv";
-            kv2.innerHTML = `
-              <div class="k">目的（対象）</div><div class="v">${escapeHtml(purpose.target || "")}</div>
-              <div class="k">目的（意図）</div><div class="v">${escapeHtml(purpose.intent || "")}</div>
-              <div class="k">目的（効果）</div><div class="v">${escapeHtml(purpose.effect || "")}</div>
+          <section class="panel card">
+            <h2>一覧（款別）</h2>
+            <div style="overflow: auto; max-height: 560px">
+              <table>
+                <thead>
+                  <tr>
+                    <th class="sticky" style="min-width: 78px">款</th>
+                    <th class="sticky" style="min-width: 120px">名称</th>
+                    <th class="sticky" style="min-width: 110px">令和7</th>
+                    <th class="sticky" style="min-width: 110px">令和6</th>
+                    <th class="sticky" style="min-width: 100px">前年差</th>
+                    <th class="sticky" style="min-width: 90px">増減率</th>
+                    <th class="sticky" style="min-width: 90px">構成比</th>
+                  </tr>
+                </thead>
+                <tbody id="kamokuTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <script>
+      const App = (() => {
+        const elAppStatus = document.getElementById("appStatus");
+        const elTabBtnDetail = document.getElementById("tabBtnDetail");
+        const elTabBtnOverview = document.getElementById("tabBtnOverview");
+        const elTabDetail = document.getElementById("tabDetail");
+        const elTabOverview = document.getElementById("tabOverview");
+
+        function setAppStatus(text) {
+          elAppStatus.textContent = text;
+        }
+
+        function selectTab(tab) {
+          const isDetail = tab === "detail";
+          elTabBtnDetail.setAttribute("aria-selected", isDetail ? "true" : "false");
+          elTabBtnOverview.setAttribute("aria-selected", isDetail ? "false" : "true");
+          elTabDetail.classList.toggle("active", isDetail);
+          elTabOverview.classList.toggle("active", !isDetail);
+          location.hash = isDetail ? "#detail" : "#overview";
+        }
+
+        function initTabs() {
+          elTabBtnDetail.addEventListener("click", () => selectTab("detail"));
+          elTabBtnOverview.addEventListener("click", () => selectTab("overview"));
+
+          if (location.hash === "#overview") selectTab("overview");
+          else selectTab("detail");
+        }
+
+        function jumpToDetailForKamoku(code, name) {
+          const q = `${code} ${name}`.trim();
+          Detail.setQuery(q);
+          selectTab("detail");
+        }
+
+        return {
+          initTabs,
+          setAppStatus,
+          jumpToDetailForKamoku,
+        };
+      })();
+
+      const Detail = (() => {
+        const state = {
+          doc: null,
+          q: "",
+        };
+
+        const elQ = document.getElementById("qDetail");
+        const elList = document.getElementById("listDetail");
+        const elStatus = document.getElementById("detailStatus");
+        const elChips = document.getElementById("chipsDetail");
+        const elExportCsv = document.getElementById("exportCsv");
+
+        function yenK(amount, unit) {
+          if (amount === null || amount === undefined) return "";
+          if (typeof amount !== "number") return String(amount);
+          const formatted = amount.toLocaleString("ja-JP");
+          return unit ? `${formatted} ${unit}` : formatted;
+        }
+
+        function safeStr(v) {
+          if (v === null || v === undefined) return "";
+          return String(v);
+        }
+
+        function escapeHtml(text) {
+          return String(text)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+        }
+
+        function textForSearch(page) {
+          const parsed = page.parsed || {};
+          const cat = parsed.category || {};
+          const kuan = cat.kuan ? `${cat.kuan.code} ${cat.kuan.name}` : "";
+          const kou = cat.kou ? `${cat.kou.code} ${cat.kou.name}` : "";
+          const moku = cat.moku ? `${cat.moku.code} ${cat.moku.name}` : "";
+          const src = page.source || {};
+          return [
+            safeStr(src.key),
+            safeStr(src.label),
+            safeStr(page.type),
+            safeStr(parsed.name),
+            safeStr(parsed.department),
+            safeStr(parsed.field),
+            safeStr(parsed.policy),
+            safeStr(parsed.prev_year_page),
+            kuan,
+            kou,
+            moku,
+            safeStr(page.text),
+          ]
+            .join(" ")
+            .toLowerCase();
+        }
+
+        function makeChips(doc) {
+          const pages = doc.pages || [];
+          const types = {};
+          const bySource = {};
+          let ocrCount = 0;
+          let reviewCount = 0;
+          for (const p of pages) {
+            types[p.type] = (types[p.type] || 0) + 1;
+            const srcKey = (p.source || {}).key || "?";
+            bySource[srcKey] = (bySource[srcKey] || 0) + 1;
+            if (p.extraction && p.extraction.used_ocr) ocrCount += 1;
+            const flags = Array.isArray(p.quality_flags) ? p.quality_flags : [];
+            if (
+              flags.includes("total_mismatch_details") ||
+              flags.includes("general_mismatch_details") ||
+              flags.includes("total_display_is_fallback")
+            ) {
+              reviewCount += 1;
+            }
+          }
+
+          const chips = [
+            `pages: ${pages.length}`,
+            ...Object.entries(types)
+              .sort((a, b) => b[1] - a[1])
+              .map(([k, v]) => `${k}: ${v}`),
+            ...Object.entries(bySource)
+              .sort((a, b) => b[1] - a[1])
+              .map(([k, v]) => `${k}: ${v}`),
+            `ocr_used: ${ocrCount}`,
+            `review: ${reviewCount}`,
+          ];
+          elChips.innerHTML = chips.map((c) => `<span class="chip">${escapeHtml(c)}</span>`).join("");
+        }
+
+        function getProjectPagesFiltered() {
+          if (!state.doc) return [];
+          const q = state.q.trim().toLowerCase();
+          const pages = (state.doc.pages || []).filter((p) => p.type === "project");
+          return q ? pages.filter((p) => textForSearch(p).includes(q)) : pages;
+        }
+
+        function csvEscape(value) {
+          if (value === null || value === undefined) return "";
+          const s = String(value);
+          if (/[\",\n\r]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
+          return s;
+        }
+
+        function toCsv(rows) {
+          return rows.map((row) => row.map(csvEscape).join(",")).join("\r\n") + "\r\n";
+        }
+
+        function downloadCsv(filename, csvText) {
+          const blob = new Blob(["\ufeff", csvText], { type: "text/csv;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        }
+
+        function budgetDetailsToText(budgetDetails) {
+          if (!Array.isArray(budgetDetails) || !budgetDetails.length) return "";
+          return budgetDetails
+            .map((r) => {
+              const section = r.section ?? "";
+              const item = r.item ?? "";
+              const qty = r.quantity ? `（${r.quantity}）` : "";
+              const amt = r.amount ?? "";
+              return `${section}:${item}${qty}:${amt}`;
+            })
+            .join(" | ");
+        }
+
+        function buildCsvRows(pages) {
+          const header = [
+            "source_key",
+            "source_label",
+            "source_pdf",
+            "source_page",
+            "category_kuan_code",
+            "category_kuan_name",
+            "category_kou_code",
+            "category_kou_name",
+            "category_moku_code",
+            "category_moku_name",
+            "field",
+            "policy",
+            "project_name",
+            "department",
+            "prev_year_page",
+            "budget_unit",
+            "budget_total_display",
+            "budget_total_display_source",
+            "budget_total_raw",
+            "budget_general_raw",
+            "budget_details_sum",
+            "budget_details_missing_amounts",
+            "quality_flags",
+            "purpose_target",
+            "purpose_intent",
+            "purpose_effect",
+            "description",
+            "budget_details",
+          ];
+
+          const rows = [header];
+          for (const page of pages) {
+            const parsed = page.parsed || {};
+            const budget = parsed.budget || {};
+            const revenue = budget.revenue || {};
+            const cat = parsed.category || {};
+            const src = page.source || {};
+            const flags = Array.isArray(page.quality_flags) ? page.quality_flags : [];
+            const purpose = parsed.purpose || {};
+            const desc = Array.isArray(parsed.description) ? parsed.description.join(" / ") : "";
+
+            rows.push([
+              src.key || "",
+              src.label || "",
+              src.pdf || "",
+              page.source_page ?? "",
+              cat.kuan ? cat.kuan.code : "",
+              cat.kuan ? cat.kuan.name : "",
+              cat.kou ? cat.kou.code : "",
+              cat.kou ? cat.kou.name : "",
+              cat.moku ? cat.moku.code : "",
+              cat.moku ? cat.moku.name : "",
+              parsed.field || "",
+              parsed.policy || "",
+              parsed.name || "",
+              parsed.department || "",
+              parsed.prev_year_page || "",
+              budget.unit || "",
+              budget.total_display ?? budget.total ?? "",
+              budget.total_display_source || "",
+              budget.total_raw ?? "",
+              revenue.general ?? budget.general_raw ?? "",
+              budget.details_sum ?? "",
+              budget.details_missing_amounts ?? "",
+              flags.join(" | "),
+              purpose.target || "",
+              purpose.intent || "",
+              purpose.effect || "",
+              desc,
+              budgetDetailsToText(parsed.budget_details),
+            ]);
+          }
+          return rows;
+        }
+
+        function render() {
+          elList.innerHTML = "";
+          if (!state.doc) return;
+
+          const pages = (state.doc.pages || []).filter((p) => p.type === "project");
+          const filtered = getProjectPagesFiltered();
+
+          elStatus.textContent = `project: ${filtered.length} / ${pages.length}`;
+          elExportCsv.disabled = filtered.length === 0;
+          elExportCsv.textContent = `CSV出力（${filtered.length}件）`;
+
+          const frag = document.createDocumentFragment();
+          for (const page of filtered) {
+            const parsed = page.parsed || {};
+            const budget = parsed.budget || {};
+            const revenue = budget.revenue || {};
+
+            const name = parsed.name || "(名称不明)";
+            const dept = parsed.department || "";
+            const unit = budget.unit || "";
+            const total = budget.total_display ?? budget.total;
+            const totalRaw = budget.total_raw ?? null;
+            const detailsSum = budget.details_sum ?? null;
+            const totalSource = budget.total_display_source || "";
+            const general = revenue.general ?? budget.general_raw ?? null;
+            const generalRaw = budget.general_raw ?? null;
+            const cat = parsed.category || {};
+            const catText = cat.kuan ? `款${cat.kuan.code}:${cat.kuan.name}` : "";
+            const flags = Array.isArray(page.quality_flags) ? page.quality_flags : [];
+            const srcLabel = (page.source || {}).label ? `${(page.source || {}).label}` : "";
+
+            const sourceLabelMap = {
+              details_sum: "内訳合計",
+              details_sum_weak: "内訳合計（弱）",
+              general: "一般財源",
+              table_total: "表（事業費）",
+              unknown: "",
+            };
+            const totalSourceLabel = sourceLabelMap[totalSource] || totalSource;
+            const showFallback = totalSource && totalSource !== "table_total";
+
+            const details = document.createElement("details");
+            const summary = document.createElement("summary");
+            summary.innerHTML = `
+              <div class="summary-left">
+                <span class="badge">${escapeHtml(srcLabel || "費目")}</span>
+                <span class="badge">p.${page.source_page}</span>
+                ${catText ? `<span class="badge">${escapeHtml(catText)}</span>` : ""}
+                <span class="name">${escapeHtml(name)}</span>
+                ${dept ? `<span class="dept">${escapeHtml(dept)}</span>` : ""}
+              </div>
+              <div class="summary-right">
+                <div class="money">${total ? yenK(total, unit) : ""}</div>
+                <div class="money-sub">
+                  ${showFallback && totalSourceLabel ? `事業費は${escapeHtml(totalSourceLabel)}で補正` : ""}
+                  ${general ? `${showFallback && totalSourceLabel ? " / " : ""}一般財源 ${yenK(general, unit)}` : ""}
+                </div>
+              </div>
             `;
-            body.appendChild(kv2);
-          }
+            details.appendChild(summary);
 
-          if (Array.isArray(parsed.description) && parsed.description.length) {
-            const ul = document.createElement("ul");
-            ul.className = "list";
-            for (const d of parsed.description) {
-              const li = document.createElement("li");
-              li.textContent = d;
-              ul.appendChild(li);
-            }
-            body.appendChild(ul);
-          }
+            const body = document.createElement("div");
+            body.className = "body";
 
-          if (Array.isArray(parsed.budget_details) && parsed.budget_details.length) {
-            const table = document.createElement("table");
-            table.innerHTML = `<thead><tr><th>節</th><th>項目</th><th class=\"amount\">金額（千円）</th></tr></thead>`;
-            const tbody = document.createElement("tbody");
-            for (const row of parsed.budget_details) {
-              const tr = document.createElement("tr");
-              const section = row.section ?? "";
-              const item = row.item ?? "";
-              const qty = row.quantity ? `（${row.quantity}）` : "";
-              const amount = row.amount ?? null;
-              tr.innerHTML = `
-                <td>${escapeHtml(String(section))}</td>
-                <td>${escapeHtml(item)}${qty ? ` <span class=\"dept\">${escapeHtml(qty)}</span>` : ""}</td>
-                <td class="amount">${amount !== null ? escapeHtml(String(amount.toLocaleString("ja-JP"))) : ""}</td>
+            const kv = document.createElement("div");
+            kv.className = "kv";
+            kv.innerHTML = `
+              <div class="k">分野 / 施策</div>
+              <div class="v">${escapeHtml([parsed.field, parsed.policy].filter(Boolean).join(" / "))}</div>
+              <div class="k">令和6年度該当</div>
+              <div class="v">${escapeHtml(parsed.prev_year_page || "")}</div>
+              <div class="k">抽出</div>
+              <div class="v">${page.extraction && page.extraction.used_ocr ? "OCR（tesseract）使用" : "pdftotext（埋め込みテキスト）"}</div>
+              <div class="k">事業費（表示）</div>
+              <div class="v">${total !== null && total !== undefined ? escapeHtml(yenK(total, unit)) : ""}${totalSourceLabel ? ` <span class="dept">(${escapeHtml(totalSourceLabel)})</span>` : ""}</div>
+              <div class="k">内訳合計</div>
+              <div class="v">${detailsSum !== null && detailsSum !== undefined ? escapeHtml(yenK(detailsSum, unit)) : ""}</div>
+              <div class="k">事業費（表抽出）</div>
+              <div class="v">${totalRaw !== null && totalRaw !== undefined ? escapeHtml(yenK(totalRaw, unit)) : ""}</div>
+              <div class="k">一般財源（表抽出）</div>
+              <div class="v">${generalRaw !== null && generalRaw !== undefined ? escapeHtml(yenK(generalRaw, unit)) : ""}</div>
+              <div class="k">フラグ</div>
+              <div class="v">${flags.length ? flags.map(escapeHtml).join(", ") : ""}</div>
+            `;
+            body.appendChild(kv);
+
+            if (parsed.purpose) {
+              const purpose = parsed.purpose;
+              const kv2 = document.createElement("div");
+              kv2.className = "kv";
+              kv2.innerHTML = `
+                <div class="k">目的（対象）</div><div class="v">${escapeHtml(purpose.target || "")}</div>
+                <div class="k">目的（意図）</div><div class="v">${escapeHtml(purpose.intent || "")}</div>
+                <div class="k">目的（効果）</div><div class="v">${escapeHtml(purpose.effect || "")}</div>
               `;
-              tbody.appendChild(tr);
+              body.appendChild(kv2);
             }
-            table.appendChild(tbody);
-            body.appendChild(table);
+
+            if (Array.isArray(parsed.description) && parsed.description.length) {
+              const ul = document.createElement("ul");
+              ul.className = "list";
+              for (const d of parsed.description) {
+                const li = document.createElement("li");
+                li.textContent = d;
+                ul.appendChild(li);
+              }
+              body.appendChild(ul);
+            }
+
+            if (Array.isArray(parsed.budget_details) && parsed.budget_details.length) {
+              const table = document.createElement("table");
+              table.innerHTML = `<thead><tr><th>節</th><th>項目</th><th class=\"amount\">金額（千円）</th></tr></thead>`;
+              const tbody = document.createElement("tbody");
+              for (const row of parsed.budget_details) {
+                const tr = document.createElement("tr");
+                const section = row.section ?? "";
+                const item = row.item ?? "";
+                const qty = row.quantity ? `（${row.quantity}）` : "";
+                const amount = row.amount ?? null;
+                tr.innerHTML = `
+                  <td>${escapeHtml(String(section))}</td>
+                  <td>${escapeHtml(item)}${qty ? ` <span class=\"dept\">${escapeHtml(qty)}</span>` : ""}</td>
+                  <td class="amount">${amount !== null ? escapeHtml(String(amount.toLocaleString("ja-JP"))) : ""}</td>
+                `;
+                tbody.appendChild(tr);
+              }
+              table.appendChild(tbody);
+              body.appendChild(table);
+            }
+
+            details.appendChild(body);
+            frag.appendChild(details);
+          }
+          elList.appendChild(frag);
+        }
+
+        async function loadDefault() {
+          elStatus.textContent = "読み込み中...";
+          try {
+            const res = await fetch("../kamakura-fin.json", { cache: "no-store" });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const doc = await res.json();
+            state.doc = doc;
+            makeChips(doc);
+            render();
+            return true;
+          } catch (err) {
+            console.error(err);
+            elStatus.textContent = "読み込み失敗";
+            elList.innerHTML =
+              `<div class="panel" style="padding:12px">` +
+              `JSON（<code>../kamakura-fin.json</code>）の読み込みに失敗しました。<br/>` +
+              `このHTMLを <code>file://</code> で直開きしている場合は、ローカルサーバーで開いてください。` +
+              `</div>`;
+            return false;
+          }
+        }
+
+        function setQuery(q) {
+          state.q = q || "";
+          elQ.value = state.q;
+          render();
+        }
+
+        function init() {
+          elQ.addEventListener("input", () => {
+            state.q = elQ.value;
+            render();
+          });
+
+          elExportCsv.addEventListener("click", () => {
+            if (!state.doc) return;
+            const filtered = getProjectPagesFiltered();
+            if (!filtered.length) return;
+
+            const rows = buildCsvRows(filtered);
+            const csv = toCsv(rows);
+            downloadCsv(`kamakura-fin.projects.csv`, csv);
+          });
+        }
+
+        return {
+          init,
+          loadDefault,
+          setQuery,
+        };
+      })();
+
+      const Overview = (() => {
+        const COLORS = [
+          "#60a5fa",
+          "#34d399",
+          "#fbbf24",
+          "#f472b6",
+          "#a78bfa",
+          "#fb7185",
+          "#22d3ee",
+          "#f97316",
+          "#c084fc",
+          "#4ade80",
+          "#93c5fd",
+          "#fda4af",
+          "#fde68a",
+          "#86efac",
+        ];
+
+        const elStatus = document.getElementById("overviewStatus");
+        const tooltipEl = document.getElementById("tooltip");
+        const select = document.getElementById("kamokuSelect");
+
+        function fmtInt(n) {
+          if (n === null || n === undefined || Number.isNaN(n)) return "-";
+          return Math.trunc(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function fmtPct(n, digits = 1) {
+          if (n === null || n === undefined || Number.isNaN(n)) return "-";
+          return `${n.toFixed(digits)}%`;
+        }
+
+        function toOkuYen(amountSenYen) {
+          if (!Number.isFinite(amountSenYen)) return null;
+          return amountSenYen / 100000;
+        }
+
+        function fmtMoney(amountSenYen) {
+          if (!Number.isFinite(amountSenYen)) return "-";
+          const oku = toOkuYen(amountSenYen);
+          const okuText = oku !== null ? `${oku.toFixed(1)}億円` : "-";
+          return `${fmtInt(amountSenYen)}<small>千円（${okuText}）</small>`;
+        }
+
+        function clamp(v, min, max) {
+          return Math.max(min, Math.min(max, v));
+        }
+
+        function polarToCartesian(cx, cy, r, angleDeg) {
+          const a = ((angleDeg - 90) * Math.PI) / 180.0;
+          return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+        }
+
+        function describeArc(cx, cy, rOuter, rInner, startAngle, endAngle) {
+          const startOuter = polarToCartesian(cx, cy, rOuter, endAngle);
+          const endOuter = polarToCartesian(cx, cy, rOuter, startAngle);
+          const startInner = polarToCartesian(cx, cy, rInner, startAngle);
+          const endInner = polarToCartesian(cx, cy, rInner, endAngle);
+          const largeArc = endAngle - startAngle <= 180 ? "0" : "1";
+          const d = [
+            "M",
+            startOuter.x,
+            startOuter.y,
+            "A",
+            rOuter,
+            rOuter,
+            0,
+            largeArc,
+            0,
+            endOuter.x,
+            endOuter.y,
+            "L",
+            startInner.x,
+            startInner.y,
+            "A",
+            rInner,
+            rInner,
+            0,
+            largeArc,
+            1,
+            endInner.x,
+            endInner.y,
+            "Z",
+          ].join(" ");
+          return d;
+        }
+
+        function showTooltip(x, y, title, lines) {
+          tooltipEl.style.left = `${x}px`;
+          tooltipEl.style.top = `${y}px`;
+          tooltipEl.innerHTML = `<div class=\"t\">${title}</div><div class=\"m\">${lines.map((s) => `<div>${s}</div>`).join("")}</div>`;
+          tooltipEl.style.display = "block";
+        }
+
+        function hideTooltip() {
+          tooltipEl.style.display = "none";
+        }
+
+        function safeGet(obj, path) {
+          try {
+            const parts = path.split(".");
+            let cur = obj;
+            for (const p of parts) {
+              if (cur == null) return null;
+              cur = cur[p];
+            }
+            return cur;
+          } catch {
+            return null;
+          }
+        }
+
+        function normalizeDoc(doc) {
+          const items = safeGet(doc, "expenditure_by_kamoku.items") || [];
+          const natureItems = safeGet(doc, "nature_breakdown.by_kamoku") || [];
+          const natureCols = safeGet(doc, "nature_breakdown.columns") || [];
+          const currentTotal = safeGet(doc, "expenditure_by_kamoku.current_total");
+          const previousTotal = safeGet(doc, "expenditure_by_kamoku.previous_total");
+          const fiscalYear = safeGet(doc, "metadata.fiscal_year_reiwa");
+          const unit = safeGet(doc, "metadata.unit") || "千円";
+
+          const byCode = new Map(items.map((it) => [it.code, it]));
+          const natureByCode = new Map(natureItems.map((it) => [it.code, it]));
+
+          return {
+            items,
+            byCode,
+            natureItems,
+            natureByCode,
+            natureCols,
+            currentTotal,
+            previousTotal,
+            fiscalYear,
+            unit,
+          };
+        }
+
+        function renderDonut(state, selectedCode, onSelect) {
+          const wrap = document.getElementById("donutWrap");
+          const legend = document.getElementById("donutLegend");
+          wrap.innerHTML = "";
+          legend.innerHTML = "";
+
+          const w = 340;
+          const h = 220;
+          const cx = 110;
+          const cy = 110;
+          const rOuter = 86;
+          const rInner = 56;
+          const total = state.currentTotal || 0;
+
+          const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          svg.setAttribute("width", w);
+          svg.setAttribute("height", h);
+          svg.style.display = "block";
+
+          const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+          svg.appendChild(g);
+
+          let angle = 0;
+          const sorted = [...state.items].sort((a, b) => (b.current || 0) - (a.current || 0));
+          sorted.forEach((it, idx) => {
+            const v = Number(it.current) || 0;
+            if (v <= 0 || total <= 0) return;
+            const share = (v / total) * 360;
+            const start = angle;
+            const end = angle + share;
+            angle = end;
+
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            const d = describeArc(cx, cy, rOuter, rInner, start, end);
+            path.setAttribute("d", d);
+            const color = COLORS[idx % COLORS.length];
+            path.setAttribute("fill", color);
+            path.setAttribute("opacity", it.code === selectedCode ? "1" : "0.78");
+            path.style.cursor = "pointer";
+
+            path.addEventListener("mousemove", (e) => {
+              const pct = total ? (v / total) * 100 : null;
+              showTooltip(e.clientX, e.clientY, `${it.name}（款${it.code}）`, [
+                `令和7: ${fmtInt(v)} 千円`,
+                `構成比: ${pct !== null ? fmtPct(pct, 2) : "-"}`,
+                `前年差: ${fmtInt(it.diff ?? 0)} 千円`,
+              ]);
+            });
+            path.addEventListener("mouseleave", hideTooltip);
+            path.addEventListener("click", () => onSelect(it.code));
+
+            g.appendChild(path);
+
+            const lg = document.createElement("div");
+            lg.className = "lg";
+            lg.style.cursor = "pointer";
+            lg.addEventListener("click", () => onSelect(it.code));
+            const dot = document.createElement("span");
+            dot.className = "dot";
+            dot.style.background = color;
+            const txt = document.createElement("span");
+            const pct = total ? (v / total) * 100 : null;
+            txt.textContent = `${it.name} ${pct !== null ? fmtPct(pct, 1) : "-"}`;
+            lg.appendChild(dot);
+            lg.appendChild(txt);
+            legend.appendChild(lg);
+          });
+
+          const centerText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          centerText.setAttribute("x", cx);
+          centerText.setAttribute("y", cy - 4);
+          centerText.setAttribute("fill", "rgba(255,255,255,0.92)");
+          centerText.setAttribute("font-size", "12");
+          centerText.setAttribute("text-anchor", "middle");
+          centerText.textContent = "歳出合計";
+          svg.appendChild(centerText);
+
+          const centerText2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          centerText2.setAttribute("x", cx);
+          centerText2.setAttribute("y", cy + 18);
+          centerText2.setAttribute("fill", "rgba(255,255,255,0.92)");
+          centerText2.setAttribute("font-size", "16");
+          centerText2.setAttribute("font-weight", "800");
+          centerText2.setAttribute("text-anchor", "middle");
+          centerText2.textContent = total ? `${toOkuYen(total).toFixed(1)}億円` : "-";
+          svg.appendChild(centerText2);
+
+          wrap.appendChild(svg);
+        }
+
+        function renderDiffChart(state, selectedCode, onSelect) {
+          const wrap = document.getElementById("diffChartWrap");
+          wrap.innerHTML = "";
+
+          const items = [...state.items].sort((a, b) => (b.diff || 0) - (a.diff || 0));
+          const diffs = items.map((it) => Number(it.diff) || 0);
+          const maxAbs = Math.max(...diffs.map((d) => Math.abs(d)), 1);
+
+          const w = 540;
+          const rowH = 24;
+          const h = 30 + items.length * rowH;
+          const leftPad = 130;
+          const rightPad = 16;
+          const barW = w - leftPad - rightPad;
+          const cx = leftPad + barW / 2;
+
+          const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          svg.setAttribute("width", "100%");
+          svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+          svg.style.display = "block";
+
+          const axis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          axis.setAttribute("x1", cx);
+          axis.setAttribute("x2", cx);
+          axis.setAttribute("y1", 18);
+          axis.setAttribute("y2", h - 8);
+          axis.setAttribute("stroke", "rgba(255,255,255,0.18)");
+          axis.setAttribute("stroke-width", "1");
+          svg.appendChild(axis);
+
+          items.forEach((it, i) => {
+            const y = 26 + i * rowH;
+            const diff = Number(it.diff) || 0;
+            const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            t.setAttribute("x", leftPad - 8);
+            t.setAttribute("y", y + 8);
+            t.setAttribute("fill", "rgba(255,255,255,0.82)");
+            t.setAttribute("font-size", "11");
+            t.setAttribute("text-anchor", "end");
+            t.textContent = it.name;
+            svg.appendChild(t);
+
+            const barLen = clamp((Math.abs(diff) / maxAbs) * (barW / 2), 0, barW / 2);
+            const barLenVisible = diff === 0 ? 0 : Math.max(barLen, 1.5);
+            const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            rect.setAttribute("y", y - 2);
+            rect.setAttribute("height", 14);
+            rect.setAttribute("rx", 6);
+            rect.setAttribute("fill", diff >= 0 ? "rgba(52,211,153,0.78)" : "rgba(251,113,133,0.78)");
+            rect.style.cursor = "pointer";
+
+            if (diff >= 0) {
+              rect.setAttribute("x", cx);
+              rect.setAttribute("width", barLenVisible);
+            } else {
+              rect.setAttribute("x", cx - barLenVisible);
+              rect.setAttribute("width", barLenVisible);
+            }
+
+            rect.addEventListener("mousemove", (e) => {
+              showTooltip(e.clientX, e.clientY, `${it.name}（款${it.code}）`, [
+                `前年差: ${fmtInt(diff)} 千円`,
+                `令和7: ${fmtInt(it.current)} 千円`,
+                `令和6: ${fmtInt(it.previous)} 千円`,
+              ]);
+            });
+            rect.addEventListener("mouseleave", hideTooltip);
+            rect.addEventListener("click", () => onSelect(it.code));
+
+            if (it.code === selectedCode) {
+              const outline = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+              outline.setAttribute("x", 0);
+              outline.setAttribute("y", y - 6);
+              outline.setAttribute("width", w);
+              outline.setAttribute("height", 22);
+              outline.setAttribute("fill", "rgba(125,211,252,0.08)");
+              outline.setAttribute("stroke", "rgba(125,211,252,0.20)");
+              outline.setAttribute("rx", 10);
+              svg.insertBefore(outline, t);
+            }
+
+            svg.appendChild(rect);
+
+            const v = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            v.setAttribute("x", w - rightPad);
+            v.setAttribute("y", y + 8);
+            v.setAttribute("fill", "rgba(255,255,255,0.72)");
+            v.setAttribute("font-size", "11");
+            v.setAttribute("text-anchor", "end");
+            v.textContent = fmtInt(diff);
+            svg.appendChild(v);
+          });
+
+          wrap.appendChild(svg);
+        }
+
+        function renderNature(state, selectedCode) {
+          const wrap = document.getElementById("natureWrap");
+          wrap.innerHTML = "";
+
+          const it = state.natureByCode.get(selectedCode);
+          const base = state.byCode.get(selectedCode);
+          if (!it || !base) {
+            wrap.textContent = "データがありません。";
+            return;
           }
 
-          details.appendChild(body);
-          frag.appendChild(details);
+          const values = it.values || {};
+          const total = Number(values.total) || 0;
+
+          const cols = state.natureCols.filter((c) => c.key !== "total");
+          const parts = cols
+            .map((c) => ({ key: c.key, label: c.label, value: Number(values[c.key]) || 0 }))
+            .filter((p) => p.value > 0);
+
+          const box = document.createElement("div");
+          box.className = "row2";
+          box.style.marginBottom = "10px";
+
+          const kv1 = document.createElement("div");
+          kv1.className = "kvbox";
+          kv1.innerHTML = `<div class=\"kvkey\">款</div><div class=\"kvval\">${base.name}<small>款${base.code}</small></div>`;
+          const kv2 = document.createElement("div");
+          kv2.className = "kvbox";
+          kv2.innerHTML = `<div class=\"kvkey\">計（令和7）</div><div class=\"kvval\">${fmtMoney(base.current)}</div>`;
+
+          box.appendChild(kv1);
+          box.appendChild(kv2);
+          wrap.appendChild(box);
+
+          const jump = document.createElement("button");
+          jump.className = "btn sm";
+          jump.type = "button";
+          jump.textContent = "費用詳細でこの款の事業を見る";
+          jump.addEventListener("click", () => App.jumpToDetailForKamoku(base.code, base.name));
+          wrap.appendChild(jump);
+
+          const bar = document.createElement("div");
+          bar.className = "kvbox";
+          bar.style.padding = "12px";
+          const barRow = document.createElement("div");
+          barRow.style.display = "flex";
+          barRow.style.height = "18px";
+          barRow.style.borderRadius = "10px";
+          barRow.style.overflow = "hidden";
+          barRow.style.marginTop = "10px";
+
+          parts
+            .sort((a, b) => b.value - a.value)
+            .forEach((p, idx) => {
+              const pct = total ? (p.value / total) * 100 : 0;
+              const seg = document.createElement("div");
+              seg.style.flex = `${pct} 0 0`;
+              seg.style.background = COLORS[idx % COLORS.length];
+              seg.style.opacity = "0.85";
+              seg.addEventListener("mousemove", (e) => {
+                showTooltip(e.clientX, e.clientY, p.label, [`金額: ${fmtInt(p.value)} 千円`, `構成比: ${fmtPct(pct, 1)}`]);
+              });
+              seg.addEventListener("mouseleave", hideTooltip);
+              barRow.appendChild(seg);
+            });
+
+          const legend = document.createElement("div");
+          legend.className = "legend";
+          parts
+            .sort((a, b) => b.value - a.value)
+            .forEach((p, idx) => {
+              const pct = total ? (p.value / total) * 100 : null;
+              const lg = document.createElement("div");
+              lg.className = "lg";
+              const dot = document.createElement("span");
+              dot.className = "dot";
+              dot.style.background = COLORS[idx % COLORS.length];
+              const txt = document.createElement("span");
+              txt.textContent = `${p.label} ${pct !== null ? fmtPct(pct, 1) : "-"}`;
+              lg.appendChild(dot);
+              lg.appendChild(txt);
+              legend.appendChild(lg);
+            });
+
+          bar.appendChild(barRow);
+          bar.appendChild(legend);
+          wrap.appendChild(bar);
+
+          const tbl = document.createElement("table");
+          tbl.innerHTML = `<thead><tr><th>性質</th><th class=\"amount\">金額（千円）</th><th class=\"amount\">構成比</th></tr></thead>`;
+          const tb = document.createElement("tbody");
+          parts
+            .sort((a, b) => b.value - a.value)
+            .forEach((p) => {
+              const pct = total ? (p.value / total) * 100 : null;
+              const tr = document.createElement("tr");
+              tr.innerHTML = `<td>${p.label}</td><td class=\"amount\">${fmtInt(p.value)}</td><td class=\"amount\">${pct !== null ? fmtPct(pct, 1) : "-"}</td>`;
+              tb.appendChild(tr);
+            });
+          const totalTr = document.createElement("tr");
+          totalTr.innerHTML = `<td><b>計</b></td><td class=\"amount\"><b>${fmtInt(total)}</b></td><td class=\"amount\"><b>${fmtPct(100, 1)}</b></td>`;
+          tb.appendChild(totalTr);
+          tbl.appendChild(tb);
+          wrap.appendChild(tbl);
         }
-        elList.appendChild(frag);
+
+        function renderTable(state, selectedCode, onSelect) {
+          const tb = document.getElementById("kamokuTableBody");
+          tb.innerHTML = "";
+          state.items.forEach((it) => {
+            const tr = document.createElement("tr");
+            if (it.code === selectedCode) tr.className = "sel";
+            tr.style.cursor = "pointer";
+            tr.addEventListener("click", () => onSelect(it.code));
+            const rate = it.rate;
+            const diff = Number(it.diff) || 0;
+            tr.innerHTML = `
+              <td>${it.code}</td>
+              <td>${it.name}</td>
+              <td class="amount">${fmtInt(it.current)}</td>
+              <td class="amount">${fmtInt(it.previous)}</td>
+              <td class="amount" style="color:${diff >= 0 ? "rgba(52,211,153,0.9)" : "rgba(251,113,133,0.9)"}">${fmtInt(diff)}</td>
+              <td class="amount">${rate === null || rate === undefined ? "-" : fmtPct(rate, 1)}</td>
+              <td class="amount">${it.share === null || it.share === undefined ? "-" : fmtPct(it.share, 1)}</td>
+            `;
+            tb.appendChild(tr);
+          });
+        }
+
+        function renderAll(doc, selectedCode) {
+          const st = normalizeDoc(doc);
+          if (!st.items.length || !st.natureItems.length) {
+            elStatus.textContent = "形式不明";
+            return;
+          }
+
+          elStatus.textContent = `令和${st.fiscalYear || "?"}年度`;
+
+          const totalCurrent = Number(st.currentTotal) || 0;
+          const totalPrev = Number(st.previousTotal) || 0;
+          document.getElementById("totalCurrent").innerHTML = fmtMoney(totalCurrent);
+          const diff = totalCurrent && totalPrev ? totalCurrent - totalPrev : 0;
+          const diffOku = toOkuYen(diff);
+          const diffBadge =
+            diff >= 0
+              ? `<span style=\"color: var(--ok)\">+${fmtInt(diff)}</span>`
+              : `<span style=\"color: var(--danger)\">${fmtInt(diff)}</span>`;
+          document.getElementById("totalDiff").innerHTML = `${diffBadge}<small>千円（${diffOku !== null ? diffOku.toFixed(1) : "-"}億円）</small>`;
+
+          document.getElementById(
+            "metaHint"
+          ).textContent = `単位: ${st.unit} / 歳出合計: ${fmtInt(totalCurrent)}千円 / 前年: ${fmtInt(totalPrev)}千円`;
+
+          select.innerHTML = "";
+          st.items.forEach((it) => {
+            const opt = document.createElement("option");
+            opt.value = it.code;
+            opt.textContent = `款${it.code} ${it.name}`;
+            select.appendChild(opt);
+          });
+          select.disabled = false;
+
+          const onSelect = (code) => {
+            const c = Number(code);
+            select.value = String(c);
+            renderDonut(st, c, onSelect);
+            renderDiffChart(st, c, onSelect);
+            renderNature(st, c);
+            renderTable(st, c, onSelect);
+          };
+
+          select.addEventListener("change", () => onSelect(Number(select.value)));
+
+          const initial = selectedCode || st.items[0].code;
+          onSelect(initial);
+        }
+
+        async function loadDefault() {
+          elStatus.textContent = "読み込み中...";
+          try {
+            const res = await fetch("../naiyo-setsumei.json", { cache: "no-store" });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const doc = await res.json();
+            renderAll(doc);
+            return true;
+          } catch (err) {
+            console.error(err);
+            elStatus.textContent = "読み込み失敗";
+            document.getElementById("donutWrap").innerHTML =
+              `<div class="panel" style="padding:12px">` +
+              `JSON（<code>../naiyo-setsumei.json</code>）の読み込みに失敗しました。` +
+              `</div>`;
+            return false;
+          }
+        }
+
+        return {
+          loadDefault,
+        };
+      })();
+
+      async function bootstrap() {
+        App.initTabs();
+        Detail.init();
+        App.setAppStatus("読み込み中...");
+        const results = await Promise.allSettled([Detail.loadDefault(), Overview.loadDefault()]);
+        const ok = results.every((r) => r.status === "fulfilled" && r.value === true);
+        App.setAppStatus(ok ? "ロード済み" : "一部失敗");
       }
 
-      function escapeHtml(text) {
-        return String(text)
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;")
-          .replaceAll("'", "&#039;");
-      }
-
-      elFile.addEventListener("change", async (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        elStatus.textContent = "読み込み中...";
-        try {
-          const text = await file.text();
-          const doc = JSON.parse(text);
-          state.doc = doc;
-          state.loadedFrom = { type: "file", name: file.name };
-          makeChips(doc);
-          render();
-        } catch (err) {
-          console.error(err);
-          elStatus.textContent = "JSON読み込み失敗";
-          elList.innerHTML = `<div class="panel" style="padding:12px">JSONの読み込みに失敗しました。ファイル形式を確認してください。</div>`;
-        }
-      });
-
-      elLoadUrl.addEventListener("click", async () => {
-        const url = (elUrl.value || "").trim();
-        if (!url) return;
-        elStatus.textContent = "読み込み中...";
-        try {
-          const res = await fetch(url, { cache: "no-store" });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const doc = await res.json();
-          state.doc = doc;
-          state.loadedFrom = { type: "url", url };
-          makeChips(doc);
-          render();
-        } catch (err) {
-          console.error(err);
-          elStatus.textContent = "JSON読み込み失敗";
-          elList.innerHTML = `<div class="panel" style="padding:12px">URLからJSONの読み込みに失敗しました。<br/>file:// 直開きの場合はブラウザ制約で失敗します。ローカルサーバーで開いてください。</div>`;
-        }
-      });
-
-      elQ.addEventListener("input", () => {
-        state.q = elQ.value;
-        render();
-      });
-
-      elExportCsv.addEventListener("click", () => {
-        if (!state.doc) return;
-        const filtered = getProjectPagesFiltered();
-        if (!filtered.length) return;
-
-        const rows = buildCsvRows(filtered);
-        const csv = toCsv(rows);
-
-        const base =
-          state.loadedFrom?.type === "file"
-            ? state.loadedFrom.name.replace(/\\.json$/i, "")
-            : state.loadedFrom?.type === "url"
-              ? (state.loadedFrom.url.split("/").pop() || "export").replace(/\\.json$/i, "")
-              : "export";
-        downloadCsv(`${base}.projects.csv`, csv);
-      });
+      bootstrap();
     </script>
   </body>
 </html>
+
