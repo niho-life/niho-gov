@@ -1,50 +1,10 @@
-# nihogov
+# niho-gov
 
-鎌倉市の予算PDFを **構造化JSON** に変換し、ブラウザで閲覧しやすくするための試作ツール群です。
+鎌倉の議会・予算・行政を、市民が暮らしの言葉で見て、関われるようにするサイト（予定 `gikai.niho.life`）。NIHO の「まちを知る」の一部。
 
-- 事業費別詳細（事業ページ単位のJSON）: `parse_budget_pdf.py`
-- 財政全体像（款別＋性質別の俯瞰JSON）: `parse_overview_pdf.py`
-- ブラウザ表示（静的HTML）: `viewer/`
+- 構想: [`docs/design/00-concept.md`](docs/design/00-concept.md)
+- 調査メモ: [`docs/research/`](docs/research/)（市民の声・全国調査・先行事例・データ源・既存の試作）
 
-## 前提
-- `pdftotext` / `pdfinfo`（Poppler）
-- Python 3
-- （OCR併用時）`tesseract`
+## 公開境界
 
-## 使い方（事業費別詳細）
-
-例: 議会費PDFを全ページJSON化
-
-```bash
-mkdir -p out
-python3 parse_budget_pdf.py /path/to/gikaihi.pdf --pages all --out out/gikaihi.all.json
-```
-
-OCR（日本語）フォールバックを有効にする例（「pdftotextで空/極端に短いページ」だけOCR）:
-
-```bash
-mkdir -p out
-python3 parse_budget_pdf.py /path/to/gikaihi.pdf \
-  --pages all \
-  --ocr \
-  --tessdata-dir tessdata \
-  --out out/gikaihi.all.json
-```
-
-## 使い方（財政全体像: naiyo-setsumei）
-
-```bash
-mkdir -p out
-python3 parse_overview_pdf.py /path/to/naiyo-setsumei.pdf --out out/naiyo-setsumei.json
-```
-
-## ブラウザで見る（試作ビューア）
-
-- 事業費別詳細: `viewer/index.html`
-- 財政全体像: `viewer/overview.html`
-
-どちらも「JSONファイルをファイル入力から選択」する方式なので、基本的にサーバ不要です。
-
-## 注意
-- このプロジェクトは `pdftotext -layout` を使ったヒューリスティック抽出です。PDFの作りによっては表の復元が崩れます。
-- 出力JSONやPDFは大きくなりがちなので、このリポジトリではデフォルトでgit管理しない設定（`.gitignore`）にしています。
+このリポジトリは公開です。コード・設計・調査メモ・市の公開資料から作ったデータだけを置きます。API キー、内部 URL、個人が特定できる意見の原文は置きません。
