@@ -1,0 +1,1065 @@
+<!doctype html>
+<!--
+  mock: gikai.niho.life v2 拡充版（スマホ＋PC 切替）。v1（gikai-v1.html）に、写真・インフォグラフィック・テーマ一覧・資料室・スタンプ・意見・市民の提案・街の目標を足したもの。
+  論点: (00) テーマ詳細は「3 行で → どんな問題？ → 意見が分かれるところ → これまで → よくある質問 → みんなの意見 → 反応」の順（初めての人がざっくり分かる順。owner 2026-10-31）。見本の文章は会議録と市の資料から書いたが「体育館 1 棟で数千万円規模」は見本
+        (0) テーマ詳細の反応は一番下に、控えめなピル（いいと思う／心配がある／まだ決められない）。ハンコ風の賛成／反対と「賛否型／同意型」の切替は owner 指示で撤去（対立を煽らない・読んでから反応）
+        (1) ホーム=「鎌倉のいま」: 動いていること／次に起きること／街のこれから／自分にできること、の順と密度
+        (2) テーマは写真カードの一覧 → 詳細。詳細の中の「スタンプ（賛成・反対・わからない）→ 理由 → 意見の整理（賛成の理由・反対の理由）」の並び
+        (3) 資料室: 1 つの議題の資料を種類別と年表で全部並べる。種類の分け方と、原文リンクの見せ方
+        (4) フォーラム: GitHub Discussions のような軽い投稿とコメントのスレッド（種類: アイデア・困りごと・相談〔市から〕・質問・お知らせ）。市・議員・事業者も同じ形でコメント。案の比較・段階・磨き上がりの条件は応用機能として今回は作らない（owner 2026-10-31）
+        (5) 予算: v1 と同じ（コインは owner 指示で撤去）
+  実数: 令和7年度 一般会計の款別・前年差・歳入・性質別、2025年9月定例会のトピック、市役所の移転の経緯、市民意識調査の指標（意見を届けられている 7.3%・参画を実感 2.3%・市民活動への参加 12〜15%・観光と暮らしの満足 24.7%）
+  見本（実データではない）: 「いま動いていること」の日付と件数、12月定例会の日程、街の目標の目標値、フォーラムの投稿とコメント（すべて架空。費用の数字も見本）、スタンプと意見の件数・文面、資料室の件名の一部、款ごとの主な事業（放課後かまくらっ子以外）、「AI に聞く」の答え、議会を読む会の日程
+  写真: assets/ の仮画像（Wikipedia/Commons・Openverse の自由ライセンス＋NIHO 所有。出典は assets/CREDITS.md）。本番では差し替える。
+  作っていない: 検索の結果画面、通知の設定、ログイン・ニックネーム登録、提案フォームの送信、写真の追加、資料室の年表の中身（種類別と同じ行を年で区切っただけ）、市役所の移転と学校の暑さ対策以外のテーマ詳細（一覧のカードは開かない）、議員一覧、PC 右レールの一部は固定
+  参照: docs/design/00-concept.md、docs/research/01〜05、owner 2026-10-31「テーマは画像つきカードの一覧→詳細」「インフォグラフィックと写真でビジュアルに」「親しみやすく・シンプル・スタイリッシュ・直感的」
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>gikai.niho.life モック v2</title>
+<style>
+:root{
+  --font:"Hiragino Maru Gothic ProN","Hiragino Sans","BIZ UDGothic",system-ui,-apple-system,sans-serif;
+  --cream:#FFFCF5; --paper:#FFFFFF; --ink:#1C1C1A; --ink2:#4A4A44; --mute:#8A8A82;
+  --line:rgba(60,45,30,.10); --line2:rgba(60,45,30,.16);
+  --green:#4B9E5E; --green-ink:#2F7A3C; --green-soft:#EAF4E6; --green-soft2:#D9EBD3;
+  --brown:#5D4335; --sand:#F6F0E2; --vermilion:#C4674F; --vermilion-soft:#F9ECE6; --navy:#3A4D6B; --navy-soft:#E8EEF6;
+  --shadow:0 8px 22px -14px rgba(60,45,30,.45);
+  --g1:#7CC083; --g2:#5FAA68; --g3:#45924F; --g4:#2F7A3C; --g5:#1E6230; --g6:#124A24;
+  --o1:#CF9A30; --o2:#B07F22; --o3:#926716; --o4:#75510D; --o5:#5A3D07;
+  --blue:#3B7DBE; --grey:#C9C6BC;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{font-family:var(--font);background:#1E221E;color:#fff;-webkit-font-smoothing:antialiased;padding:16px 12px 40px}
+button{font-family:var(--font);cursor:pointer;border:0;background:none;color:inherit}
+input,textarea,select{font-family:var(--font)}
+a{color:inherit;text-decoration:none}
+img{display:block}
+svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ===== stage ===== */
+.stage{display:flex;flex-direction:column;align-items:center;gap:14px}
+.bar{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;width:min(1180px,100%)}
+.bar__title{font-size:13px;font-weight:700;color:rgba(255,255,255,.85)}
+.bar__title span{font-weight:400;color:rgba(255,255,255,.5);margin-left:6px}
+.variant-switch{display:flex;gap:4px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:4px}
+.variant-switch button{font-size:12.5px;font-weight:700;color:rgba(255,255,255,.7);padding:7px 14px;border-radius:999px}
+.variant-switch button.on{background:#fff;color:#1C1C1A}
+.urlbar{display:flex;align-items:center;gap:8px;width:min(560px,100%);border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);padding:9px 16px;font-size:11.5px;color:rgba(255,255,255,.72);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap;overflow:hidden;justify-content:center}
+.urlbar .lock{font-size:10px;opacity:.6}.urlbar .u{overflow:hidden;text-overflow:ellipsis}.urlbar .u b{font-weight:400;color:#B3D97D}
+.scaler{transform-origin:top center}
+
+/* ===== frames ===== */
+.frame{position:relative;overflow:hidden;background:var(--cream);color:var(--ink)}
+.frame.phone{width:393px;max-width:100%;height:812px;max-height:calc(100vh - 130px);border-radius:44px;box-shadow:0 30px 90px rgba(0,0,0,.45),0 0 0 10px #101310,0 0 0 11px rgba(255,255,255,.08)}
+.frame.desktop{width:1180px;height:760px;border-radius:16px;box-shadow:0 30px 90px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.12)}
+.app{position:absolute;inset:0;display:flex;flex-direction:column;container-type:inline-size;container-name:app}
+
+/* ===== top bar ===== */
+.topbar{flex:none;display:flex;align-items:center;gap:10px;padding:14px 18px 10px;background:var(--cream);z-index:2}
+.frame.phone .topbar{padding-top:46px}
+.brand{display:flex;align-items:center;gap:9px;cursor:pointer}
+.brand svg{width:28px;height:29px;flex:none}
+.brand .t{font-size:17px;font-weight:700}.brand .s{font-size:11px;color:var(--mute);margin-left:6px;font-weight:600}
+.topnav{display:none;margin-left:22px;gap:2px}
+.topnav button{font-size:13.5px;font-weight:700;color:var(--ink2);padding:8px 12px;border-radius:999px}
+.topnav button.on{background:var(--ink);color:#fff}
+.topbar .sp{flex:1}
+.topbar .ask-btn{display:none;align-items:center;gap:8px;background:#fff;border:1px solid var(--line2);border-radius:999px;padding:9px 14px;font-size:13px;color:var(--mute);width:280px;text-align:left}
+
+.me{width:36px;height:36px;border-radius:50%;overflow:hidden;border:1px solid var(--line2);flex:none;padding:0;background:#fff}
+.me img{width:100%;height:100%;object-fit:cover}
+.app:not([data-route="home"]) .topbar{display:none}
+.app:not([data-route="home"]) .screen:not(.bleed){padding-top:50px}
+.icon-btn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line2);background:#fff;display:inline-flex;align-items:center;justify-content:center;color:var(--ink2);flex:none}
+.icon-btn svg{width:20px;height:20px}
+/* ===== screens ===== */
+.screens{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.screens::-webkit-scrollbar{width:0;height:0}
+.screen{display:none;padding:6px 16px 110px}
+.screen.on{display:block}
+.screen.bleed{padding-top:0}
+.pagehead{display:flex;align-items:flex-start;gap:8px;margin:4px 0 14px}
+.back{width:36px;height:36px;border-radius:999px;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;flex:none;font-size:18px;color:var(--ink2);margin-left:-6px}
+.pagehead h1{font-size:22px;font-weight:700;line-height:1.3;margin-top:4px}
+.pagehead .sub{font-size:13px;color:var(--ink2);margin-top:4px;line-height:1.6}
+h2.sec{font-size:15px;font-weight:700;margin:22px 0 10px;display:flex;align-items:baseline;gap:8px}
+h2.sec:first-child{margin-top:4px}
+h2.sec .more{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--green-ink)}
+h2.sec .cnt{font-size:12px;color:var(--mute);font-weight:600}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow)}
+.card+.card{margin-top:10px}
+.card.tap{cursor:pointer;transition:transform .15s,box-shadow .15s}
+.card.tap:hover{transform:translateY(-1px);box-shadow:0 12px 26px -14px rgba(60,45,30,.5)}
+.row{display:flex;align-items:center;gap:10px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:999px;background:var(--sand);color:var(--brown);white-space:nowrap}
+.pill.go{background:var(--green-soft);color:var(--green-ink)}.pill.soon{background:#FFF1DB;color:#8A5A12}.pill.done{background:#EEF0F4;color:#4A5568}.pill.red{background:var(--vermilion-soft);color:var(--vermilion)}.pill.navy{background:var(--navy-soft);color:var(--navy)}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:999px;background:#fff;border:1px solid var(--line2);color:var(--ink2);white-space:nowrap}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips.scroll{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;margin:0 -16px;padding-left:16px;padding-right:16px}
+.chips.scroll::-webkit-scrollbar{display:none}
+.mute{color:var(--mute)}.small{font-size:12px}.xs{font-size:11.5px}.ink2{color:var(--ink2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:700;padding:11px 18px;border-radius:999px;background:var(--green);color:#fff;transition:background .15s}
+.btn:hover{background:var(--green-ink)}.btn.sec{background:#fff;color:var(--ink);border:1px solid var(--line2)}.btn.sm{font-size:12.5px;padding:7px 12px}.btn.red{background:var(--green)}
+.ext{color:var(--green-ink);font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:4px}.ext::after{content:"↗";font-size:11px}
+.hr{height:1px;background:var(--line);margin:12px 0}
+.num{font-variant-numeric:tabular-nums}
+.placeholder{background:#E9E3D6;color:var(--mute)}
+
+/* lists */
+.list{display:flex;flex-direction:column}
+.list .it{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+.list .it:first-child{border-top:0;padding-top:2px}
+.list .it .t{flex:1;min-width:0}.list .it .t b{display:block;font-size:14px;font-weight:700;line-height:1.4}.list .it .t span{display:block;font-size:12px;color:var(--mute);margin-top:2px}
+.list .it .v{font-weight:700;font-size:14px;white-space:nowrap}.list .it .arrow{color:var(--grey);font-size:16px}
+.date{width:46px;flex:none;text-align:center;line-height:1.1}.date b{display:block;font-size:17px}.date span{font-size:10.5px;color:var(--mute)}
+.thumb{width:56px;height:56px;border-radius:14px;object-fit:cover;flex:none}
+.thumb.sm{width:44px;height:44px;border-radius:12px}
+
+/* hero photo */
+.hero-photo{position:relative;margin:0 -16px;height:250px;overflow:hidden;background:#333}
+.hero-photo img{width:100%;height:100%;object-fit:cover}
+.hero-photo .ov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 30%,rgba(20,24,20,.72) 100%)}
+.hero-photo .tx{position:absolute;left:18px;right:18px;bottom:16px;color:#fff}
+.hero-photo.has-stats .tx{bottom:46px}
+.hero-photo .tx .k{font-size:12px;font-weight:700;opacity:.9;letter-spacing:.04em}
+.hero-photo .tx h1{font-size:26px;font-weight:800;line-height:1.2;margin-top:2px;text-shadow:0 2px 12px rgba(0,0,0,.35)}
+.hero-photo .tx p{font-size:12.5px;margin-top:4px;opacity:.92}
+.hero-photo .tx .pills{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.hero-photo .tx .pill{background:rgba(255,255,255,.92)}
+.hero-photo .back{position:absolute;left:14px;top:14px;margin:0;background:rgba(255,255,255,.9)}
+.frame.phone .hero-photo .back{top:48px}
+.stats3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:-26px;position:relative;z-index:1}
+.stats3 .st{background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px 10px;box-shadow:var(--shadow);text-align:center}
+.stats3 .st b{display:block;font-size:19px;font-weight:800;line-height:1.1}.stats3 .st b small{font-size:11px;font-weight:700}
+.stats3 .st span{display:block;font-size:10.5px;color:var(--mute);margin-top:3px;line-height:1.3}
+
+/* hero number */
+.hero{background:linear-gradient(160deg,#FFFFFF 0%,#F4F8EE 100%);border:1px solid var(--line);border-radius:24px;padding:18px 18px 16px;box-shadow:var(--shadow)}
+.hero .big{font-size:38px;font-weight:800;letter-spacing:-.01em;line-height:1.05;margin:6px 0 2px}.hero .big small{font-size:16px;font-weight:700;margin-left:2px}
+.hero .cap{font-size:12.5px;color:var(--ink2)}
+.stat2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.stat2 .st{background:rgba(255,255,255,.75);border:1px solid var(--line);border-radius:16px;padding:10px 12px}
+.stat2 .st b{display:block;font-size:19px;font-weight:800}.stat2 .st span{font-size:11.5px;color:var(--mute)}
+
+/* feed */
+.feed .fi{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line);align-items:flex-start}
+.feed .fi:first-child{border-top:0;padding-top:0}
+.feed .who{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;font-size:11px;font-weight:800}
+.feed .who.council{background:var(--sand);color:var(--brown)}.feed .who.city{background:var(--navy-soft);color:var(--navy)}.feed .who.ppl{background:var(--green-soft);color:var(--green-ink)}.feed .who.niho{background:#FFF1DB;color:#8A5A12}
+.feed .tx{flex:1;min-width:0}.feed .tx b{display:block;font-size:14px;line-height:1.45}.feed .tx span{display:block;font-size:12px;color:var(--mute);margin-top:3px}
+.feed .tx .pill{margin-top:6px}
+
+/* goals */
+.goal{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.goal:first-child{border-top:0;padding-top:0}
+.gv{width:74px;flex:none}
+.gv b{font-size:22px;font-weight:800;line-height:1}
+.gv b small{font-size:12px;margin-left:1px}
+.ring{width:54px;height:54px;flex:none;position:relative}
+.ring svg{width:54px;height:54px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:6}
+.ring .bg{stroke:#EFEBE2}.ring .fg{stroke:var(--green);stroke-linecap:round}
+.ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800}
+.goal .t{flex:1;min-width:0}.goal .t b{display:block;font-size:13.5px;line-height:1.4}.goal .t span{display:block;font-size:11.5px;color:var(--mute);margin-top:2px}
+
+/* action tiles */
+.acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.act{background:#fff;border:1px solid var(--line);border-radius:18px;padding:12px;box-shadow:var(--shadow);cursor:pointer;display:flex;flex-direction:column;gap:6px;min-height:92px}
+.act .ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--green-soft);color:var(--green-ink)}
+.act b{font-size:13.5px;line-height:1.35}.act span{font-size:11.5px;color:var(--mute)}
+
+/* theme cards */
+.tgrid{display:grid;grid-template-columns:1fr;gap:12px}
+.tcardp{background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s}
+.tcardp:hover{transform:translateY(-2px)}
+.tcardp .im{position:relative;height:150px;background:#ddd}
+.tcardp .im img{width:100%;height:100%;object-fit:cover}
+.tcardp .im .pill{position:absolute;left:12px;top:12px;background:rgba(255,255,255,.94)}
+.tcardp .bd{padding:12px 14px 14px}
+.tcardp .bd b{display:block;font-size:16px;line-height:1.35}
+.tcardp .bd p{font-size:12.5px;color:var(--ink2);margin-top:4px;line-height:1.5}
+.tcardp .bd .m{display:flex;gap:12px;margin-top:9px;font-size:11.5px;color:var(--mute);align-items:center}
+.tcardp .bd .m i{display:inline-flex;align-items:center;gap:4px;font-style:normal}
+.tcardp.off{cursor:default}
+.hscroll{display:flex;gap:10px;overflow-x:auto;margin:0 -16px;padding:4px 16px 8px;scroll-snap-type:x mandatory}
+.hscroll::-webkit-scrollbar{display:none}
+.hscroll .tcardp{flex:0 0 230px;scroll-snap-align:start}
+.hscroll .tcardp .im{height:110px}
+.hscroll .tcardp .bd b{font-size:14px}
+
+/* stamps */
+.stamps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stamp{display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 0}
+.stamp .seal{width:66px;height:66px;border-radius:50%;border:2.5px solid var(--vermilion);color:var(--vermilion);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;letter-spacing:.04em;background:#fff;box-shadow:inset 0 0 0 3px #fff,inset 0 0 0 4px var(--vermilion-soft);transition:transform .12s,background .12s,color .12s;transform:rotate(-6deg)}
+.stamp .seal.mini{font-size:10.5px;line-height:1.15;text-align:center;padding:0 4px}
+.stamp:hover .seal{transform:rotate(-6deg) scale(1.04)}
+.stamp.on .seal{background:var(--vermilion);color:#fff;box-shadow:inset 0 0 0 3px var(--vermilion),inset 0 0 0 4px #fff;animation:press .25s ease-out}
+.stamp .c{font-size:12px;color:var(--ink2);font-weight:700}
+.stamp.on .c{color:var(--vermilion)}
+@keyframes press{0%{transform:rotate(-6deg) scale(1.25)}60%{transform:rotate(-6deg) scale(.96)}100%{transform:rotate(-6deg) scale(1)}}
+.res{display:none;margin-top:12px}.res.on{display:block}
+.res .st{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px}.res .st i{display:block}
+.res .lg{display:flex;justify-content:space-between;font-size:12px;margin-top:6px;color:var(--ink2)}.res .lg b{color:var(--ink)}
+.ta{width:100%;border:1.5px solid var(--line2);border-radius:16px;padding:12px;font-size:14px;line-height:1.6;resize:none;margin-top:10px;background:#fff;color:var(--ink)}
+.ta:focus{outline:2px solid var(--green);border-color:transparent}
+.cnt{text-align:right;font-size:11.5px;color:var(--mute);margin-top:4px}
+.meta-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--mute);margin-top:10px}
+.meta-row .m{display:inline-flex;align-items:center;gap:5px;background:var(--sand);color:var(--brown);padding:4px 9px;border-radius:999px;font-weight:700;font-size:11.5px}
+
+.next-step{display:none;margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.next-step.on{display:block}
+.ns{display:flex;align-items:center;gap:10px;padding:8px 0}
+.ns .ic{width:34px;height:34px;border-radius:10px;background:var(--green-soft);color:var(--green-ink);display:flex;align-items:center;justify-content:center;flex:none}
+.ns>div:not(.ic){flex:1;min-width:0}
+.ns b{display:block;font-size:13px;line-height:1.4}
+.ns span{display:block;font-size:11.5px;color:var(--mute);margin-top:2px}
+.react{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.react button{font-size:12px;font-weight:700;color:var(--ink2);background:#fff;border:1px solid var(--line2);border-radius:999px;padding:5px 10px 5px 8px;display:inline-flex;gap:5px;align-items:center}
+.react .em,.cmt .cm .em{font-size:17px;line-height:1}
+.cmt .cm button .em{font-size:15px}
+.react button b{color:var(--mute);font-weight:700}
+.react button.on{background:var(--green-soft);border-color:var(--green);color:var(--green-ink)}
+.react button.on b{color:var(--green-ink)}
+.concern{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.5}
+.concern:first-of-type{border-top:0}
+.concern button{flex:none;font-size:12px;font-weight:800;color:var(--green-ink);background:var(--green-soft);border-radius:999px;padding:6px 10px;display:inline-flex;gap:2px}
+.concern button.on{background:var(--green);color:#fff}
+.concern button.on b{color:#fff}
+.quiet .q{font-size:13.5px;font-weight:700;margin-bottom:10px;line-height:1.5}
+.quiet .react{margin-bottom:0}
+.quiet .react button b{color:var(--mute)}
+.lead3{counter-reset:n;display:flex;flex-direction:column;gap:10px}
+.lead3 div{display:flex;gap:12px;align-items:flex-start;font-size:14.5px;line-height:1.65}
+.lead3 div::before{counter-increment:n;content:counter(n);width:24px;height:24px;border-radius:50%;background:var(--green-soft);color:var(--green-ink);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none;margin-top:3px}
+.about p{font-size:14px;line-height:1.85}
+.about p+p{margin-top:10px}
+.photos2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.photos2 div{position:relative;border-radius:14px;overflow:hidden;height:110px}
+.photos2 img{width:100%;height:100%;object-fit:cover}
+.photos2 span{position:absolute;left:8px;bottom:8px;font-size:11.5px;font-weight:700;color:#fff;background:rgba(0,0,0,.45);padding:3px 8px;border-radius:999px}
+.faq .f{padding:11px 0;border-top:1px solid var(--line)}
+.faq .f:first-child{border-top:0;padding-top:2px}
+.faq .f b{display:block;font-size:14px;line-height:1.5}
+.faq .f p{font-size:13px;color:var(--ink2);line-height:1.7;margin-top:4px}
+/* opinions */
+.op2{display:grid;grid-template-columns:1fr;gap:10px}
+.opcol h4{font-size:13px;font-weight:800;display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.opcol h4 .dot{width:10px;height:10px;border-radius:50%}
+.op{background:#fff;border:1px solid var(--line);border-radius:16px;padding:11px 12px;margin-bottom:8px}
+.op p{font-size:13px;line-height:1.6}
+.op .m{display:flex;gap:10px;align-items:center;margin-top:7px;font-size:11.5px;color:var(--mute)}
+.op .m .nm{font-weight:700;color:var(--ink2)}
+.op .m button{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--green-ink);display:inline-flex;gap:4px;align-items:center}
+.sum{background:var(--sand);border-radius:16px;padding:12px 14px}
+.sum b{font-size:13px;display:block;margin-bottom:6px}
+.sum ul{padding-left:18px;font-size:12.5px;line-height:1.7;color:var(--ink2)}
+
+/* library */
+.lib-types{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.lt{background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px 4px;text-align:center;cursor:pointer}
+.lt .ic{width:28px;height:28px;border-radius:9px;margin:0 auto 4px;display:flex;align-items:center;justify-content:center}
+.lt b{display:block;font-size:10.5px;line-height:1.2}.lt span{display:block;font-size:12px;font-weight:800;margin-top:2px}
+.lt.on{border-color:var(--ink);background:var(--ink);color:#fff}
+.lrow{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.lrow:first-child{border-top:0}
+.lrow .ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}
+.lrow .t{flex:1;min-width:0}.lrow .t b{display:block;font-size:13.5px;line-height:1.4}.lrow .t span{display:block;font-size:11.5px;color:var(--mute);margin-top:2px}
+.lrow .f{font-size:10.5px;font-weight:800;color:var(--mute);border:1px solid var(--line2);border-radius:6px;padding:2px 5px;flex:none;margin-top:3px}
+.ic.c1{background:var(--sand);color:var(--brown)}.ic.c2{background:var(--navy-soft);color:var(--navy)}.ic.c3{background:var(--green-soft);color:var(--green-ink)}.ic.c4{background:#FFF1DB;color:#8A5A12}.ic.c5{background:var(--vermilion-soft);color:var(--vermilion)}
+.seg{display:inline-flex;background:#EFEBE2;border-radius:999px;padding:3px}
+.seg button{font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;color:var(--ink2)}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.yearh{font-size:12px;font-weight:800;color:var(--mute);margin:12px 0 2px;letter-spacing:.04em}
+
+/* proposals */
+.pcard{background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);cursor:pointer;display:flex;gap:0}
+.pcard .im{width:112px;flex:none;background:#ddd}
+.pcard .im img{width:100%;height:100%;object-fit:cover;min-height:120px}
+.pcard .bd{padding:12px 14px;flex:1;min-width:0}
+.pcard .bd b{display:block;font-size:14.5px;line-height:1.4}
+.pcard .bd .by{font-size:11.5px;color:var(--mute);margin-top:3px}
+.prog{height:8px;border-radius:4px;background:#EFEBE2;overflow:hidden;margin-top:9px}
+.prog i{display:block;height:100%;background:var(--g3);border-radius:4px}
+.prog.ok i{background:var(--green)}
+.pm{display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:11.5px;color:var(--ink2)}
+.pm b{font-size:12.5px}
+.steps{display:flex;gap:0;align-items:flex-start}
+.step{flex:1;text-align:center;position:relative;font-size:10.5px;color:var(--mute);line-height:1.25}
+.step .d{width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--grey);margin:0 auto 5px;position:relative;z-index:1}
+.step::before{content:"";position:absolute;left:50%;right:-50%;top:5px;height:2px;background:#E4DFD3}
+.step:last-child::before{display:none}
+.step.done .d{background:var(--green);border-color:var(--green)}.step.done{color:var(--ink2);font-weight:700}
+.step.done::before{background:var(--green-soft2)}
+.step.now .d{background:#fff;border-color:var(--vermilion);box-shadow:0 0 0 3px var(--vermilion-soft)}.step.now{color:var(--vermilion);font-weight:800}
+.bigbtn{display:flex;align-items:center;gap:12px;background:var(--green);color:#fff;border-radius:18px;padding:14px 16px;cursor:pointer;box-shadow:0 10px 24px -14px rgba(47,122,60,.6)}
+.bigbtn b{font-size:15px;display:block}.bigbtn span{font-size:11.5px;opacity:.9}
+.bigbtn .seal2{width:44px;height:44px;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;transform:rotate(-8deg);flex:none}
+.form .f{margin-top:12px}.form label{display:block;font-size:12.5px;font-weight:700;margin-bottom:5px}
+.form input,.form textarea,.form select{width:100%;border:1.5px solid var(--line2);border-radius:14px;padding:11px 12px;font-size:14px;background:#fff;color:var(--ink)}
+.form textarea{resize:none;line-height:1.6}
+
+.opt+.opt{margin-top:10px}
+.optgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:10px 0 6px}
+.optgrid div{min-width:0}
+.optgrid span{display:block;font-size:10.5px;color:var(--mute);font-weight:700}
+.optgrid b{display:block;font-size:12.5px;line-height:1.4}
+.stamps.small{gap:6px;margin-top:4px}
+.stamps.small .seal{width:54px;height:54px;font-size:13px}
+.stamps.small .seal.mini{font-size:9.5px}
+.agree{display:flex;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.agree:first-child{border-top:0;padding-top:0}
+.agree .bar{width:64px;height:10px;border-radius:5px;background:#EFEBE2;overflow:hidden;flex:none}
+.agree .bar i{display:block;height:100%;background:var(--g4)}
+.agree.split .bar i{background:var(--o2)}
+.agree .t{flex:1;min-width:0}
+.agree .t b{display:block;font-size:13.5px;line-height:1.4}
+.agree .t span{display:block;font-size:11.5px;color:var(--mute);margin-top:2px}
+.posts .po{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
+.posts .po:first-child{border-top:0}
+.av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex:none}
+.av.ppl{background:var(--green-soft);color:var(--green-ink)}.av.city{background:var(--navy-soft);color:var(--navy)}.av.giin{background:var(--sand);color:var(--brown)}.av.biz{background:#FFF1DB;color:#8A5A12}
+.posts .po .t{flex:1;min-width:0}
+.posts .po .t b{display:block;font-size:14.5px;line-height:1.45}
+.posts .po .t span{display:block;font-size:11.5px;color:var(--mute);margin-top:3px}
+.posts .po .t span i{font-style:normal;font-weight:700;padding:1px 6px;border-radius:999px;margin-right:4px}
+.posts .po .n{flex:none;font-size:12px;color:var(--mute);font-weight:700;display:flex;align-items:center;gap:4px;margin-top:2px}
+.post p{font-size:14.5px;line-height:1.8}
+.post p+p{margin-top:8px}
+.ph{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.ph b{display:block;font-size:13.5px}.ph span{display:block;font-size:11.5px;color:var(--mute)}
+.cmts{display:flex;flex-direction:column}
+.cmt{padding:14px 0 12px;border-top:1px solid var(--line)}
+.cmt:first-child{border-top:0;padding-top:4px}
+.cmt p{font-size:13.5px;line-height:1.75}.cmt p+p{margin-top:6px}
+.cmt .cm{display:flex;gap:12px;margin-top:8px}
+.cmt .cm button{font-size:12px;font-weight:700;color:var(--green-ink);display:inline-flex;gap:4px;align-items:center}
+.cmt .cm button b{color:var(--mute)}
+.cmt .cm button.on b{color:var(--green-ink)}
+.cmt.reply{margin:4px 0 0 46px;padding:12px 0 0}
+.cmt.reply .av{width:28px;height:28px;font-size:11px}
+.cmt .cm button svg{width:16px;height:16px}
+/* treemap / bars / coins */
+.treemap{position:relative;width:100%;height:300px;border-radius:18px;overflow:hidden;background:var(--cream)}
+.tile{position:absolute;border:2px solid var(--cream);border-radius:10px;padding:8px 9px;overflow:hidden;cursor:pointer;transition:filter .15s;color:#fff;display:flex;flex-direction:column}
+.tile:hover{filter:brightness(1.07)}
+.tile .n{font-size:13px;font-weight:700;line-height:1.25}.tile .a{font-size:12px;font-weight:700;margin-top:3px;opacity:.95}.tile .k{font-size:10.5px;opacity:.75;margin-top:auto}
+.tile.ink{color:var(--ink)}.tile.tiny .a,.tile.tiny .k{display:none}.tile.tiny .n{font-size:11px}.tile.tiny2 .n{display:none}
+.bars{display:flex;flex-direction:column;gap:9px}
+.brow{display:grid;grid-template-columns:7.2em 1fr auto;align-items:center;gap:10px;font-size:13px}
+.brow .n{font-weight:700;line-height:1.25}.brow .n small{display:block;font-weight:400;color:var(--mute);font-size:11px}
+.brow .bar{height:10px;border-radius:5px;background:#EFEBE2;position:relative;overflow:hidden}.brow .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--g4)}
+.brow .v{font-weight:700;font-size:13px;white-space:nowrap}
+.div{display:flex;flex-direction:column;gap:7px}
+.drow{display:grid;grid-template-columns:6.2em 1fr 4.6em;align-items:center;gap:8px;font-size:12.5px}
+.drow .n{font-weight:700;text-align:right;line-height:1.2}.drow .trk{position:relative;height:14px}
+.drow .trk::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--line2)}
+.drow .trk i{position:absolute;top:1px;height:12px;border-radius:4px;background:var(--blue)}.drow .v{font-weight:700;font-size:12.5px;white-space:nowrap}
+.stack{display:flex;height:16px;border-radius:8px;overflow:hidden;gap:2px;background:var(--cream)}.stack i{display:block;height:100%}
+.stack-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 14px;margin-top:10px;font-size:12px}
+.stack-legend .l{display:flex;align-items:center;gap:7px;min-width:0}.stack-legend .l i{width:10px;height:10px;border-radius:3px;flex:none}.stack-legend .l b{margin-left:auto;font-weight:700}
+.coins{display:flex;flex-wrap:wrap;gap:5px}
+.coin{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)}
+.coin.ink{color:var(--ink)}
+.coin-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 12px;margin-top:10px;font-size:12px}
+.coin-legend .l{display:flex;align-items:center;gap:7px}.coin-legend .l i{width:12px;height:12px;border-radius:50%;flex:none}.coin-legend .l b{margin-left:auto}
+
+.mini-stack{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px;margin-top:10px}
+.mini-stack i{display:block}
+/* timeline */
+.tl{position:relative;padding-left:22px}
+.tl::before{content:"";position:absolute;left:7px;top:8px;bottom:8px;width:2px;background:var(--line2)}
+.tl .ev{position:relative;padding:0 0 18px}
+.tl .ev::before{content:"";position:absolute;left:-19px;top:5px;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid var(--mute)}
+.tl .ev.now::before{background:var(--green);border-color:var(--green);box-shadow:0 0 0 4px var(--green-soft)}
+.tl .ev.next::before{background:#fff;border-style:dashed;border-color:var(--green-ink)}
+.tl .ev .d{font-size:11.5px;font-weight:700;color:var(--mute)}.tl .ev .h{font-size:14px;font-weight:700;line-height:1.45;margin-top:2px}.tl .ev .p{font-size:12.5px;color:var(--ink2);line-height:1.6;margin-top:3px}
+.tl .ev .who{margin-top:6px;display:flex;gap:5px;flex-wrap:wrap}
+.who .w{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--sand);color:var(--brown)}.who .w.city{background:var(--navy-soft);color:var(--navy)}.who .w.ppl{background:var(--green-soft);color:var(--green-ink)}
+.tl .ev img{width:100%;height:120px;object-fit:cover;border-radius:12px;margin-top:8px}
+
+/* session topic cards */
+.tcard .head{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.tcard h3{font-size:15px;font-weight:700;line-height:1.4}.tcard .lead{font-size:12.5px;color:var(--ink2);line-height:1.55;margin-top:4px}
+.tcard .body{display:none;margin-top:12px}.tcard.open .body{display:block}
+.tcard .caret{margin-left:auto;color:var(--grey);font-size:18px;transition:transform .2s;flex:none}.tcard.open .caret{transform:rotate(180deg)}
+.qa{border-left:3px solid var(--green-soft2);padding:2px 0 2px 10px;margin:8px 0}.qa .q{font-size:13px;font-weight:700}.qa .a{font-size:13px;color:var(--ink2);margin-top:3px;line-height:1.6}.qa .a b{color:var(--ink)}
+.links{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;align-items:center}
+
+/* search / answer */
+.search{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line2);border-radius:999px;padding:12px 16px;box-shadow:var(--shadow)}
+.search input{flex:1;border:0;outline:0;font-size:14px;background:transparent;color:var(--ink);min-width:0}.search input::placeholder{color:var(--mute)}.search .ic{color:var(--green-ink);font-weight:800}
+.answer{background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow)}
+.answer .q{font-size:15px;font-weight:700}.answer .a{font-size:14px;line-height:1.75;margin-top:10px;color:var(--ink2)}.answer .a b{color:var(--ink)}
+.src{margin-top:12px;display:flex;flex-direction:column;gap:6px}.src a{font-size:12.5px;color:var(--green-ink);font-weight:600;display:flex;gap:6px;align-items:center;cursor:pointer}.src a::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);flex:none}
+
+.fab{display:none;position:absolute;right:14px;bottom:96px;width:48px;height:48px;border-radius:50%;background:#5C5240;color:#fff;font-size:24px;line-height:1;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.25);z-index:5;transition:transform .15s}
+.fab:active{transform:scale(.95)}
+.app[data-route="forum"] .fab{display:flex}
+.fab-desk{display:none}
+/* dock */
+.dock{flex:none;display:flex;justify-content:center;background:linear-gradient(180deg,rgba(252,250,244,.97),rgba(248,244,234,.98));border-top:1px solid rgba(255,255,255,.9);border-radius:22px 22px 0 0;box-shadow:0 -8px 24px -16px rgba(60,45,30,.4);padding:6px 6px 18px}
+.dock .in{display:flex;width:100%;max-width:640px}
+.dock button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px;border-radius:14px;font-size:10.5px;font-weight:700;color:var(--mute)}
+.dock button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.dock button.on{color:var(--green-ink)}.dock button.on svg{stroke-width:2.2}
+
+/* desktop */
+.rail{display:none}
+@container app (min-width: 860px){
+  .topbar{padding:16px 36px 12px;border-bottom:1px solid var(--line)}
+  .topnav{display:flex}.topbar .ask-btn{display:flex}.dock{display:none}.fab{display:none!important}.fab-desk{display:inline-flex}
+  .app:not([data-route="home"]) .topbar{display:flex}
+  .app:not([data-route="home"]) .screen:not(.bleed){padding-top:22px}
+  .screen{padding:22px 36px 60px;max-width:1120px;margin:0 auto}
+  .screen.bleed{padding-top:0}
+  .hero-photo{margin:0 -36px;height:300px;border-radius:0 0 28px 28px}
+  .me{display:inline-flex}
+  .hero-photo .tx{left:36px;right:36px;bottom:26px}
+  .hero-photo.has-stats .tx{bottom:56px}.hero-photo .tx h1{font-size:40px}
+  .frame.desktop .hero-photo .back{top:16px;left:36px}
+  .stats3{grid-template-columns:repeat(3,minmax(0,1fr));max-width:620px}
+  .pagehead h1{font-size:28px}
+  .two{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:28px;align-items:start}
+  .rail{display:block;position:sticky;top:0}
+  .treemap{height:420px}.tile .n{font-size:15px}.tile .a{font-size:13.5px}.tile .k{font-size:11.5px}
+  .tgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .acts{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .stat2{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .hero .big{font-size:46px}
+  .budget-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}.budget-cols .card+.card{margin-top:0}
+  .op2{grid-template-columns:1fr 1fr}
+  .lib-types{grid-template-columns:repeat(10,minmax(0,1fr))}
+  .pgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.pgrid .pcard{margin:0}
+  .hscroll{margin:0;padding:4px 0 8px}
+  .home-search{max-width:560px}
+  .coin-legend{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></symbol>
+  <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.5a4.5 4.5 0 0 1 5 4.5"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9.5h6M9 12.5h6M12 7v10"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></symbol>
+  <symbol id="i-mega" viewBox="0 0 24 24"><path d="M4 10v4h3l7 4V6l-7 4z"/><path d="M18 9a4 4 0 0 1 0 6"/></symbol>
+  <symbol id="i-news" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h5v4H7zM14 9h3M14 13h3M7 16h10"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></symbol>
+  <symbol id="i-stamp" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M8 13a5 5 0 1 1 8 0c-1 1-1.5 2-1.5 3h-5c0-1-.5-2-1.5-3z"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></symbol>
+  <symbol id="i-tree" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="12" rx="1.5"/><rect x="13" y="3" width="8" height="7" rx="1.5"/><rect x="13" y="12" width="8" height="9" rx="1.5"/><rect x="3" y="17" width="8" height="4" rx="1.5"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5h6a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H4zM20 5h-6a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h7z"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M13 7l3 3"/></symbol>
+  <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-7 7"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-reply" viewBox="0 0 24 24"><path d="M9 7L4 12l5 5"/><path d="M4 12h9a6 6 0 0 1 6 6v1"/></symbol>
+  <symbol id="i-cup" viewBox="0 0 24 24"><path d="M5 8h12v6a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5z"/><path d="M17 10h2a2 2 0 0 1 0 4h-2M7 4v2M10 3v3M13 4v2"/></symbol>
+</svg>
+
+<div class="stage">
+  <div class="bar">
+    <div class="bar__title">gikai.niho.life <span>モック v2・拡充版</span></div>
+    <div class="variant-switch"><button data-frame="phone" class="on">スマホ</button><button data-frame="desktop">PC</button></div>
+    <div class="urlbar"><span class="lock">🔒</span><span class="u" id="url"></span></div>
+  </div>
+
+  <div class="scaler" id="scaler">
+  <div class="frame phone" id="frame">
+    <div class="app" id="app">
+
+      <div class="topbar">
+        <div class="brand" onclick="go('home')"><svg aria-hidden="true" viewBox="0 0 462 473" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_1644_5)">
+<path d="M302.558 171.957C298.265 171.411 288.441 164.836 285.967 159.527C282.376 151.836 283.444 136.553 287.422 130.797C292.104 124.023 309.86 116.233 317.064 120.252C324.244 124.272 328.174 127.745 335.087 132.285C343.504 137.818 346.415 150.794 336.979 162.107C322.837 179.052 311.315 173.048 302.558 171.957Z" fill="#4D5E71"/>
+<path d="M358.859 165.134C375.014 160.296 393.231 169.798 401.261 185.304C409.29 200.811 407.713 220.733 399.296 236.066C397.064 240.11 394.347 243.955 390.806 246.809C387.531 249.438 383.698 251.126 379.842 252.639C373.316 255.194 365.821 257.303 359.611 254.028C353.789 250.952 350.806 243.906 349.787 237.108C349.399 234.503 349.229 231.823 348.38 229.317C345.105 219.518 333.608 216.317 326.791 208.849C320.096 201.481 318.592 189.373 323.298 180.367C327.98 171.361 339.187 171.039 358.883 165.159L358.859 165.134Z" fill="#BCD499"/>
+<path d="M354.808 385.596C342.122 396.289 307.701 400.11 297.464 393.238C287.228 386.39 275.318 377.98 274.76 365.128C273.717 341.881 292.419 345.925 298.726 328.806C303.043 317.096 295.96 297.223 315.512 279.632C337.537 259.809 340.763 270.254 356.142 266.93C367.422 264.498 388.574 257.03 397.282 267.773C412.152 286.108 402.207 315.26 377.78 330.964C353.426 346.62 374.917 368.701 354.832 385.596H354.808Z" fill="#A8D5E2"/>
+<path d="M260.182 338.11C251.886 340.665 244.391 331.386 244.391 326.772C244.391 316.947 257.392 309.628 265.349 287.969C266.562 284.669 270.758 268.121 272.966 265.441C275.173 262.737 282.135 254.946 285.579 254.946C296.543 254.946 301.007 262.786 300.061 269.808C298.46 281.617 293.002 295.387 289.727 306.824C288.854 309.851 288.32 316.699 286.913 319.502C282.523 328.384 269.472 335.232 260.182 338.11Z" fill="#4D5E71"/>
+<path d="M224.863 227.134C212.783 225.894 211.522 234.925 183.02 224.355C175.888 221.701 161.455 216.094 161.455 201.208C161.455 165.828 189.812 174.959 216.931 161.884C248.223 146.799 278.374 159.03 295.282 179.548C306.828 193.566 307.75 226.216 288.441 237.108C262.583 251.696 244.342 229.144 224.839 227.134H224.863Z" fill="#FAEBCC"/>
+<path d="M207.131 76.264C232.043 73.6589 262.243 66.2407 266.221 65.5708C281.455 63.065 302.316 69.2179 304.062 87.1308C305.008 96.906 300.812 106.681 294.141 113.777C279.975 128.837 253.074 137.644 228.429 141.986C217.707 143.872 211.497 130.424 201.115 127.125C179.429 120.228 176.591 79.4397 207.107 76.2392L207.131 76.264Z" fill="#A8D5E2"/>
+<path d="M130.867 218.674C116.774 221.651 98.4839 231.699 85.2152 205.252C72.5045 179.896 61.322 180.293 78.2049 148.834C84.9969 136.18 96.8101 124.817 110.904 124.718C118.326 124.669 125.385 127.745 132.177 130.772C135.67 132.31 139.139 133.873 142.632 135.411C147.896 137.743 153.353 140.224 157.089 144.665C164.027 152.902 163.105 165.431 159.442 175.628C155.464 186.669 154.372 213.687 130.843 218.674H130.867Z" fill="#4D5E71"/>
+<path d="M125.506 302.879C131.862 307.866 141.273 305.137 148.648 308.338C155.173 311.141 159.151 318.485 159.369 325.73C159.563 332.974 156.483 339.995 152.116 345.677C143.675 356.693 128.563 363.466 115.925 358.107C109.254 355.254 104.087 349.498 97.465 346.496C93.4384 344.66 88.9993 343.94 84.8999 342.303C74.0327 338.011 65.9793 327.02 65.009 315.136C64.5239 309.231 65.6397 303.326 67.2407 297.645C69.8362 288.39 74.5178 278.714 83.2504 275.117C91.7161 271.619 101.662 275.117 108.672 281.071C115.706 287.026 118.35 297.248 125.482 302.855L125.506 302.879Z" fill="#CFC1AC"/>
+<path d="M216.082 405.171C200.388 409.563 183.554 408.769 168.272 402.939C163.59 401.152 158.908 398.795 155.512 394.826C146.901 384.703 149.958 367.187 158.86 357.362C167.762 347.538 180.643 343.642 193.014 340.963C208.757 337.539 226.028 335.703 240 344.387C246.695 348.555 252.201 355.005 255.549 362.647C259.818 372.397 260.182 384.976 253.972 393.387C247.374 402.318 235.246 399.813 216.082 405.171Z" fill="#F09B84"/>
+<path d="M231.946 316.699C221.2 324.563 211.74 326.871 198.714 329.203C185.688 331.535 169.654 326.871 164.851 314.267C157.622 295.312 143.31 303.053 132.613 283.329C121.139 262.191 124.657 240.408 136.373 229.739C149.763 217.558 168.223 224.554 175.961 230.608C191.34 242.616 193.79 252.837 204.39 248.124C232.334 235.719 250.672 246.213 257.101 264.275C265.008 286.455 241.916 309.405 231.97 316.674L231.946 316.699Z" fill="#BCD499"/>
+<path d="M95.0391 256.733C87.6164 260.653 80.5333 264.349 72.577 266.979C69.7389 267.922 66.5855 268.542 63.7959 267.426C60.8365 266.235 58.9202 263.258 57.6831 260.256C55.9366 255.988 55.2089 251.324 55.5727 246.709C56.0579 240.482 58.9202 234.056 64.3053 231.079C68.1379 228.97 87.4466 226.613 91.7886 226.961C100.594 227.655 118.884 232.468 115.536 247.528C113.256 257.874 102.243 252.887 95.0148 256.733H95.0391Z" fill="#A8D5E2"/>
+<path d="M314.081 255.691C308.89 255.715 304.402 250.753 303.965 245.394C303.529 240.035 306.585 234.776 310.927 231.823C315.269 228.871 320.678 227.978 325.869 228.35C328.077 228.499 330.406 228.945 332.104 230.384C333.292 231.402 334.093 232.841 334.845 234.23C335.936 236.264 337.076 238.398 337.125 240.705C337.173 243.261 335.912 245.692 334.214 247.553C329.726 252.515 322.959 255.591 314.056 255.666L314.081 255.691Z" fill="#CFC1AC"/>
+<path d="M183.166 166.474C175.428 166.722 171.668 164.737 169.242 157.914C167.568 153.2 163.663 141.961 166.719 138.041C171.401 132.062 182.947 136.528 187.241 137.892C194.251 140.125 199.418 143.747 204.196 149.454C205.555 151.091 206.719 153.299 206.04 155.309C205.288 157.467 192.529 166.151 183.19 166.474H183.166Z" fill="#F09B84"/>
+</g>
+<defs>
+<clipPath id="clip0_1644_5">
+<rect width="351" height="342.9" fill="white" transform="translate(55.5 65.0498)"/>
+</clipPath>
+</defs>
+</svg>
+<span class="t">鎌倉の議会</span><span class="s">NIHO</span></div>
+        <nav class="topnav" id="topnav">
+          <button data-nav="home" onclick="go('home')">ホーム</button>
+          <button data-nav="topics" onclick="go('topics')">テーマ</button>
+          <button data-nav="session" onclick="go('session')">議会</button>
+          <button data-nav="forum" onclick="go('forum')">フォーラム</button>
+          <button data-nav="budget" onclick="go('budget')">予算</button>
+          <button data-nav="library" onclick="go('library')">資料室</button>
+        </nav>
+        <div class="sp"></div>
+        <button class="ask-btn" onclick="go('ask')"><span style="color:var(--green-ink);font-weight:800">?</span> 体育館のエアコンはどうなった？</button>
+        <button class="me" aria-label="マイページ" onclick="go('me')"><img src="assets/niho-takuya-profile.png" alt=""></button>
+      </div>
+
+      <main class="screens" id="screens">
+
+        <!-- ================= HOME ================= -->
+        <section class="screen bleed on" data-route="home">
+          <div class="hero-photo has-stats">
+            <img src="assets/yuigahama.jpg" alt="">
+            <div class="ov"></div>
+            <div class="tx"><div class="k">KAMAKURA · 2025.11</div><h1>鎌倉のいま</h1></div>
+          </div>
+          <div class="stats3">
+            <div class="st"><b>6<small>件</small></b><span>今週の動き</span></div>
+            <div class="st"><b>32<small>日</small></b><span>次の議会まで</span></div>
+            <div class="st"><b>12<small>件</small></b><span>フォーラムで話し合い中</span></div>
+          </div>
+
+          <div class="search home-search" onclick="go('ask')" style="cursor:pointer;margin:12px 0 4px"><span class="ic">?</span><input type="text" placeholder="体育館のエアコンはどうなった？" readonly></div>
+
+          <h2 class="sec">いま動いていること</h2>
+          <div class="card feed">
+            <div class="fi" onclick="go('thread')" style="cursor:pointer"><div class="who city">市</div><div class="tx"><b>市 観光課が「鎌高前踏切」の投稿にコメント。警備員は週末だけなら年 400 万円ほど</b><span>11月1日・フォーラム</span></div><img class="thumb" src="assets/kamakoumae.jpg" alt=""></div>
+            <div class="fi" onclick="go('forum')" style="cursor:pointer"><div class="who city">市</div><div class="tx"><b>市 環境部が相談を投稿。燃やすごみの行き先、逗子市への委託を続けるか、自前の焼却炉か</b><span>10月31日・フォーラム</span></div><img class="thumb" src="assets/garbage-truck.jpg" alt=""></div>
+            <div class="fi" onclick="go('topic-cityhall')" style="cursor:pointer"><div class="who city">市</div><div class="tx"><b>新庁舎「両輪体制」の方針を公表</b><span>10月30日・市役所の移転</span><span class="pill soon">12月定例会で質疑</span></div><img class="thumb" src="assets/cityhall.jpg" alt=""></div>
+            <div class="fi" onclick="go('session')" style="cursor:pointer"><div class="who council">議会</div><div class="tx"><b>12月定例会の議案を公開。補正予算と学校の空調が議題に</b><span>10月28日・議会</span></div></div>
+            <div class="fi"><div class="who city">市</div><div class="tx"><b>パブリックコメント「第4次総合計画（素案）」を受付中</b><span>11月14日まで・市の計画</span><span class="pill red">あと 13 日</span></div></div>
+            <div class="fi"><div class="who niho">NIHO</div><div class="tx"><b>議会を読む会 — 12月定例会のまえに</b><span>11月20日（木）19:00・NIHO kamakura・オンライン可</span></div><img class="thumb" src="assets/niho-cover1.jpg" alt=""></div>
+          </div>
+
+          <h2 class="sec">みんなで進めていること <button class="more" onclick="go('forum')">›</button></h2>
+          <div class="card" id="ledger"></div>
+
+          <h2 class="sec">次に起きること <button class="more">›</button></h2>
+          <div class="card">
+            <div class="list">
+              <div class="it"><div class="date"><b>11/4</b><span>火</span></div><div class="t"><b>総務常任委員会</b><span>市役所の移転・財政</span></div><span class="ext">録画</span></div>
+              <div class="it"><div class="date"><b>11/14</b><span>金</span></div><div class="t"><b>パブリックコメント締切</b><span>第4次総合計画（素案）</span></div><span class="ext">市のページ</span></div>
+              <div class="it"><div class="date"><b>11/20</b><span>木</span></div><div class="t"><b>議会を読む会</b><span>NIHO kamakura 19:00</span></div><span class="arrow">›</span></div>
+              <div class="it"><div class="date"><b>12/2</b><span>火</span></div><div class="t"><b>12月定例会 開会</b><span>〜 12/19</span></div><span class="arrow">›</span></div>
+            </div>
+          </div>
+
+          <h2 class="sec">テーマ <button class="more" onclick="go('topics')">›</button></h2>
+          <div class="hscroll" id="homeThemes"></div>
+
+          <h2 class="sec">街のこれから <button class="more" onclick="go('goals')">›</button></h2>
+          <div class="card" id="homeGoals"></div>
+
+          <h2 class="sec">自分にできること</h2>
+          <div class="acts">
+            <div class="act" onclick="go('topics')"><div class="ic"><svg class="i"><use href="#i-stamp"/></svg></div><b>スタンプで気持ちを示す</b><span>テーマに賛成・反対</span></div>
+            <div class="act" onclick="go('idea')"><div class="ic"><svg class="i"><use href="#i-bulb"/></svg></div><b>フォーラムに投稿</b><span>困りごと・アイデア</span></div>
+            <div class="act" onclick="go('forum')"><div class="ic"><svg class="i"><use href="#i-chat"/></svg></div><b>市の相談に答える</b><span>ごみの行き先</span></div>
+            <div class="act"><div class="ic"><svg class="i"><use href="#i-cup"/></svg></div><b>読む会に来る</b><span>11/20 NIHO kamakura</span></div>
+          </div>
+
+          <h2 class="sec">予算 <button class="more" onclick="go('budget')">›</button></h2>
+          <div class="card tap" onclick="go('budget')">
+            <div class="small mute">2025年度 鎌倉市の予算</div>
+            <div style="display:flex;align-items:baseline;gap:8px"><div style="font-size:26px;font-weight:800">810<small style="font-size:13px">億円</small></div><span class="small ink2">= 市民ひとりあたり 月 3.9 万円</span></div>
+            <div class="mini-stack" id="miniStack"></div>
+          </div>
+        </section>
+
+        <!-- ================= TOPICS LIST ================= -->
+        <section class="screen" data-route="topics">
+          <div class="pagehead"><div><h1>テーマ</h1></div></div>
+          <div class="chips scroll" id="topicFilters">
+            <button class="chip on">すべて</button><button class="chip">動きあり</button><button class="chip">暮らし</button><button class="chip">子育て</button><button class="chip">観光</button><button class="chip">防災</button><button class="chip">お金</button>
+          </div>
+          <div class="tgrid" id="topicGrid" style="margin-top:12px"></div>
+        </section>
+
+        <!-- ================= TOPIC: CITY HALL ================= -->
+        <section class="screen bleed" data-route="topic-cityhall">
+          <div class="hero-photo">
+            <img src="assets/cityhall.jpg" alt="">
+            <div class="ov"></div>
+            <button class="back" onclick="back()">‹</button>
+            <div class="tx"><div class="k">テーマ</div><h1>市役所の移転</h1><p>御成町に残すか、深沢へ移すか。8 年ごしの論点。</p><div class="pills"><span class="pill soon"><span class="dot"></span>12月定例会で動き</span><span class="pill">防災</span><span class="pill">財政</span></div></div>
+          </div>
+          
+          <div class="two" style="margin-top:14px">
+          <div>
+          <h2 class="sec">3 行で</h2>
+          <div class="card"><div class="lead3">
+            <div>市役所をどこに置くかを、市と議会と市民で 8 年ごしに話し合っている。</div>
+            <div>市は「いまの御成町に市長室と議会を残し、8 割の機能を深沢へ移す」両輪案を進めたい。</div>
+            <div>市役所の場所を変える条例には議会の 3 分の 2 が要り、2022 年は否決。12 月の定例会で続きが議論される。</div>
+          </div></div>
+
+          <h2 class="sec">どんな問題？</h2>
+          <div class="card about">
+            <p>鎌倉市役所はいま、鎌倉駅西口の御成町にあります。建物の老朽化と、地震や津波のときに本庁舎が使えなくなる心配から、市は深沢（湘南深沢駅のそばにある市の広い土地）へ移す計画を進めてきました。</p>
+            <p>ただ、市役所の場所を変えるには条例を変える必要があり、議会の 3 分の 2 の賛成が要ります。2022 年 12 月の採決は 16 対 10 で届きませんでした。</p>
+            <p>そこで市は 2025 年、御成町に市長室と議会を残して窓口など 8 割の機能を深沢へ移す「両輪案」を出しました。条例を変えずに進められる一方で、「2 か所に分かれて不便」「進め方が強引」という声があります。</p>
+            <div class="photos2"><div><img src="assets/cityhall.jpg" alt=""><span>いま・御成町</span></div><div><img src="assets/fukasawa.jpg" alt=""><span>候補地・深沢</span></div></div>
+          </div>
+
+          <h2 class="sec">意見が分かれるところ</h2>
+          <div class="card">
+            <div class="list">
+              <div class="it"><div class="t"><b>両輪案で進めてよいか</b><span>市: 災害への備えを急ぐ ／ 議会: 条例改正を避ける手法は強引</span></div></div>
+              <div class="it"><div class="t"><b>住民投票をするか</b><span>2018年に 8,270 筆の直接請求は否決。市長選で両候補の争点に</span></div></div>
+              <div class="it"><div class="t"><b>2 拠点の費用と使い勝手</b><span>二重行政になるのか。深沢の浸水・渋滞の心配</span></div></div>
+            </div>
+          </div>
+
+          <h2 class="sec">これまで</h2>
+          <div class="card">
+            <div class="tl">
+              <div class="ev"><div class="d">2018</div><div class="h">住民投票を求める直接請求（8,270 筆）</div><div class="p">市議会は住民投票条例案を否決。</div><div class="who"><span class="w ppl">市民</span><span class="w">議会</span></div></div>
+              <div class="ev"><div class="d">2022.12</div><div class="h">市役所の位置を変える条例案、16 対 10 で否決</div><div class="p">可決には 3 分の 2（18 人）の賛成が必要だった。</div><div class="who"><span class="w">議会</span></div></div>
+              <div class="ev"><div class="d">2025.8</div><div class="h">市の説明会に延べ 183 人、パブコメ 85 通</div><div class="p">「市民全体に信を問わずに進めている」など反対の声と、早期移転を求める声の両方。</div><div class="who"><span class="w city">市</span><span class="w ppl">市民</span></div><img src="assets/meeting.jpg" alt=""></div>
+              <div class="ev now"><div class="d">2025.9</div><div class="h">9月定例会で市長が「両輪案」を表明</div><div class="p">現在地に市長室と議会、深沢に約 8 割の機能。条例改正を行わずに進める案。議員から「住民投票を」の声。</div><div class="who"><span class="w city">市</span><span class="w">議会</span></div><div class="links" style="margin-top:8px"><button class="btn sm sec" onclick="go('session')">9月定例会のまとめ</button><span class="ext">会議録 9/5</span></div></div>
+              <div class="ev"><div class="d">2025.10</div><div class="h">市長選。両輪案を進める現職が 52.7%、撤回と住民投票を掲げた候補が 41.5%</div><div class="p">投票率 40.9%。</div><div class="who"><span class="w ppl">市民</span></div></div>
+              <div class="ev"><div class="d">2025.10.30</div><div class="h">市が「両輪体制」の方針を公表</div><div class="who"><span class="w city">市</span></div></div>
+              <div class="ev next"><div class="d">次</div><div class="h">12月定例会（12/2〜）で質疑</div><div class="p">総務常任委員会は 11/4。</div></div>
+            </div>
+          </div>
+
+          <h2 class="sec">よくある質問</h2>
+          <div class="card faq">
+            <div class="f"><b>結局、市役所はどこに行くの？</b><p>両輪案では、市長室と議会は御成町のまま、窓口など 8 割の機能が深沢へ。まだ決まっていません。</p></div>
+            <div class="f"><b>住民投票はあるの？</b><p>2018 年の直接請求（8,270 筆）は議会で否決。2025 年の市長選で争点になりましたが、いま予定はありません。</p></div>
+            <div class="f"><b>いつ決まるの？</b><p>12 月定例会（12/2〜）で質疑。お金が絡むので、2026 年 2 月の予算案も山場です。</p></div>
+          </div>
+
+          <h2 class="sec">みんなの意見 <button class="more">書く ›</button></h2>
+          <div class="sum"><b>要約</b><ul><li>賛成: 災害時に本庁舎が使えないリスクを早く減らしたい。深沢は広く、駐車場と将来の建て替えに余裕がある</li><li>反対: 2 拠点は二重行政で費用がかさむ。条例改正を避ける進め方に納得できない。深沢は浸水域で渋滞も心配</li><li>両方: 住民投票で決着をつけるべき、という声が賛否どちらにもある</li></ul></div>
+          <div class="op2" style="margin-top:10px">
+            <div class="opcol"><h4><span class="dot" style="background:var(--g4)"></span>賛成の理由</h4>
+              <div class="op"><p>津波警報のとき市役所に避難して、建物の古さが怖かった。早く安全な場所にしてほしい。</p><div class="m"><span class="nm">由比ガ浜のまき</span><span>11/1</span><button><svg class="i" style="width:14px;height:14px"><use href="#i-heart"/></svg> 24</button></div></div>
+              <div class="op"><p>深沢なら駐車場も広い。高齢の親を車で連れて行きやすい。</p><div class="m"><span class="nm">てらさん</span><span>10/31</span><button><svg class="i" style="width:14px;height:14px"><use href="#i-heart"/></svg> 11</button></div></div>
+            </div>
+            <div class="opcol"><h4><span class="dot" style="background:var(--vermilion)"></span>反対の理由</h4>
+              <div class="op"><p>2 か所に分かれると手続きで行ったり来たりになりそう。費用も二重にかかるのでは。</p><div class="m"><span class="nm">大船のケン</span><span>11/2</span><button><svg class="i" style="width:14px;height:14px"><use href="#i-heart"/></svg> 31</button></div></div>
+              <div class="op"><p>3 分の 2 が取れないから条例を変えずに進める、というやり方が納得できない。住民投票をしてほしい。</p><div class="m"><span class="nm">御成のユキ</span><span>10/30</span><button><svg class="i" style="width:14px;height:14px"><use href="#i-heart"/></svg> 28</button></div></div>
+            </div>
+          </div>
+          </div>
+
+          <aside class="rail">
+          <h2 class="sec">資料室 <span class="cnt">48 件</span> <button class="more" onclick="go('library')">全部見る ›</button></h2>
+          <div class="card">
+            <div class="chips" style="margin-bottom:8px"><span class="chip">議案 3</span><span class="chip">委員会 8</span><span class="chip">質疑 12</span><span class="chip">予算 2</span><span class="chip">市の計画 4</span><span class="chip">パブコメ 1</span><span class="chip">報道 9</span><span class="chip">市民の声 9</span></div>
+            <div class="lrow"><div class="ic c2"><svg class="i"><use href="#i-map"/></svg></div><div class="t"><b>新庁舎整備「両輪体制」の考え方（整理表）</b><span>鎌倉市・2025.10.30</span></div><span class="f">PDF</span></div>
+            <div class="lrow"><div class="ic c1"><svg class="i"><use href="#i-chat"/></svg></div><div class="t"><b>9月定例会 本会議 一般質問（庁舎）</b><span>会議録・2025.9.5</span></div><span class="f">原文</span></div>
+            <div class="lrow"><div class="ic c4"><svg class="i"><use href="#i-mega"/></svg></div><div class="t"><b>パブリックコメントの結果（85 通）</b><span>鎌倉市・2025.9</span></div><span class="f">PDF</span></div>
+          </div>
+          <h2 class="sec">フォーラムの投稿</h2>
+          <div class="card"><div class="list"><div class="it" onclick="go('forum')" style="cursor:pointer"><div class="t"><b>市役所が移るなら、跡地を芝生の広場にしたい</b><span>御成のユキ・コメント 19</span></div><span class="arrow">›</span></div><div class="it" onclick="go('forum')" style="cursor:pointer"><div class="t"><b>深沢の新庁舎に、市民が使える部屋はできますか？</b><span>深沢のアキ・コメント 7</span></div><span class="arrow">›</span></div></div></div>
+          <h2 class="sec">関連する予算</h2>
+          <div class="card"><div class="list"><div class="it" onclick="goKan('somu')" style="cursor:pointer"><div class="t"><b>本庁舎等整備事業</b><span>2025年度・市役所の運営（総務費）</span></div><span class="v num">3.3億円</span><span class="arrow">›</span></div></div></div>
+          <h2 class="sec">発言した議員</h2>
+          <div class="chips"><span class="chip">吉岡和江</span><span class="chip">くりはらえりこ</span><span class="chip">岡田かずのり</span><span class="chip">長嶋竜弘</span><span class="chip">＋6人</span></div>
+          </aside>
+          </div>
+        <div class="card quiet" style="margin-top:22px">
+            <div class="q">両輪案（2 拠点）で進めること</div>
+            <div class="react"><button onclick="stance(this)" title="いいと思う" aria-label="いいと思う"><span class="em">😊</span><b>81</b></button><button onclick="stance(this)" title="心配がある" aria-label="心配がある"><span class="em">😟</span><b>94</b></button><button onclick="stance(this)" title="まだ決められない" aria-label="まだ決められない"><span class="em">🤔</span><b>38</b></button></div>
+            <div class="res"><div class="st"><i style="width:38%;background:var(--g4)"></i><i style="width:44%;background:var(--o2)"></i><i style="width:18%;background:var(--grey)"></i></div><div class="lg"><span>😊 <b>38%</b></span><span>😟 <b>44%</b></span><span>🤔 <b>18%</b></span></div></div>
+            <textarea class="ta" rows="2" maxlength="100" placeholder="ひとこと（任意）"></textarea>
+            <div class="xs mute" style="margin-top:8px">届け先 市議会の各会派・11/28 まで・返事 12/20 ごろ</div>
+          </div>
+        
+        </section><!-- ================= TOPIC: SCHOOL HEAT ================= -->
+        <section class="screen bleed" data-route="topic-heat">
+          <div class="hero-photo">
+            <img src="assets/onari-es.jpg" alt="">
+            <div class="ov"></div>
+            <button class="back" onclick="back()">‹</button>
+            <div class="tx"><div class="k">テーマ</div><h1>学校の暑さ対策</h1><p>体育館にエアコンを。避難所としての備えも。</p><div class="pills"><span class="pill go"><span class="dot"></span>2026年度の予算化を目指す</span><span class="pill">学校</span><span class="pill">防災</span></div></div>
+          </div>
+                    <div class="two" style="margin-top:14px">
+          <div>
+          <h2 class="sec">3 行で</h2>
+          <div class="card"><div class="lead3">
+            <div>市立の小中学校の体育館にはエアコンがなく、夏は授業でも避難所としても暑すぎる。</div>
+            <div>2025 年 9 月の定例会で、市は「少なくとも 2026 年度の予算化を目指す」と答えた。</div>
+            <div>2026 年 2 月の予算案に入るか、どの学校から始めるかが次の山場。</div>
+          </div></div>
+
+          <h2 class="sec">どんな問題？</h2>
+          <div class="card about">
+            <p>2025 年 7 月 30 日の津波警報で、多くの人が学校の体育館に避難しました。そこで問題になったのが暑さです。体育館にエアコンがない学校がほとんどで、猛暑の日は休み時間に体育館で過ごすこともできません。</p>
+            <p>9 月の定例会で細川まなか議員がエアコンの設置を求め、市は「喫緊の課題」と認めて 2026 年度の予算化を目指すと答えました。全校に一度に付けると費用が大きいため、どの学校から始めるか、国の補助をどう使うかが論点です。</p>
+            <div class="photos2"><div><img src="assets/onari-es.jpg" alt=""><span>市立の小学校</span></div><div><img src="assets/zaimokuza.jpg" alt=""><span>津波警報のとき避難した海沿い</span></div></div>
+          </div>
+
+          <h2 class="sec">これまで</h2>
+          <div class="card">
+            <div class="tl">
+              <div class="ev"><div class="d">2025.7.30</div><div class="h">津波警報で多くの人が学校や市役所へ避難</div><div class="p">体育館の暑さが課題に。ペットを連れた避難でもトラブル。</div><div class="who"><span class="w ppl">市民</span></div></div>
+              <div class="ev now"><div class="d">2025.9.5</div><div class="h">9月定例会で細川まなか議員が体育館のエアコン設置を質問</div><div class="p">市は「喫緊の課題」と認め、「少なくとも令和8年度の予算化を目指している」と答弁。</div><div class="who"><span class="w">議会</span><span class="w city">市</span></div><div class="links" style="margin-top:8px"><button class="btn sm sec" onclick="go('member')">細川まなか議員</button><span class="ext">会議録 9/5</span><span class="ext">録画</span></div></div>
+              <div class="ev next"><div class="d">次</div><div class="h">2026年2月定例会で 2026年度予算案</div><div class="p">教育費（2025年度 78.6億円）の中に入るかを確認。</div></div>
+            </div>
+          </div>
+          <h2 class="sec">よくある質問</h2>
+          <div class="card faq">
+            <div class="f"><b>いつ付くの？</b><p>市の答弁は「2026 年度の予算化を目指す」。付く学校と時期は 2 月の予算案で分かります。</p></div>
+            <div class="f"><b>費用はどのくらい？</b><p>体育館 1 棟で数千万円規模と言われます。国の補助を使えるかが鍵です。</p></div>
+          </div>
+          </div>
+          <aside class="rail">
+          <h2 class="sec">資料室 <span class="cnt">11 件</span> <button class="more" onclick="go('library')">全部見る ›</button></h2>
+          <div class="card"><div class="lrow"><div class="ic c1"><svg class="i"><use href="#i-chat"/></svg></div><div class="t"><b>9月定例会 一般質問（体育館の空調）</b><span>会議録・2025.9.5</span></div><span class="f">原文</span></div><div class="lrow"><div class="ic c3"><svg class="i"><use href="#i-coin"/></svg></div><div class="t"><b>教育費 2025年度 事業費別詳細</b><span>予算書・2025.3</span></div><span class="f">PDF</span></div><div class="lrow"><div class="ic c5"><svg class="i"><use href="#i-heart"/></svg></div><div class="t"><b>避難所の暑さについての市民の声（9 件）</b><span>NIHO・2025.8</span></div><span class="f">ページ</span></div></div>
+          <h2 class="sec">フォーラムの投稿</h2>
+          <div class="card"><div class="list"><div class="it" onclick="go('forum')" style="cursor:pointer"><div class="t"><b>夏休みの体育館、暑くて使えない。涼める場所として開放できない？</b><span>腰越のパパ・コメント 9</span></div><span class="arrow">›</span></div></div></div>
+          <h2 class="sec">関連する予算</h2>
+          <div class="card"><div class="list"><div class="it" onclick="goKan('kyoiku')" style="cursor:pointer"><div class="t"><b>学校・教育（教育費）</b><span>2025年度</span></div><span class="v num">78.6億円</span><span class="arrow">›</span></div></div></div>
+          </aside>
+          </div>
+        <div class="card quiet" style="margin-top:22px">
+            <div class="q">体育館のエアコンを 2026年度に予算化すること</div>
+            <div class="react"><button onclick="stance(this)" title="いいと思う" aria-label="いいと思う"><span class="em">😊</span><b>78</b></button><button onclick="stance(this)" title="心配がある" aria-label="心配がある"><span class="em">😟</span><b>7</b></button><button onclick="stance(this)" title="まだ決められない" aria-label="まだ決められない"><span class="em">🤔</span><b>11</b></button></div>
+            <div class="res"><div class="st"><i style="width:81%;background:var(--g4)"></i><i style="width:7%;background:var(--o2)"></i><i style="width:12%;background:var(--grey)"></i></div><div class="lg"><span>😊 <b>81%</b></span><span>😟 <b>7%</b></span><span>🤔 <b>12%</b></span></div></div>
+            <textarea class="ta" rows="2" maxlength="100" placeholder="ひとこと（任意）"></textarea>
+            <div class="xs mute" style="margin-top:8px">届け先 市教育委員会・各会派・1/31 まで・返事 2月定例会のあと</div>
+          </div>
+        
+        </section><!-- ================= LIBRARY ================= -->
+        <section class="screen" data-route="library">
+          <div class="pagehead"><button class="back" onclick="back()">‹</button><div><h1>資料室</h1><div class="sub">市役所の移転</div></div></div>
+          <div class="search" style="margin-bottom:12px"><span class="ic">⌕</span><input type="text" placeholder="資料の中を検索（例: 浸水 / 3分の2）"></div>
+          <div class="lib-types" id="libTypes"></div>
+          <div class="row" style="margin:14px 0 8px"><div class="seg"><button class="on" onclick="libMode(this,'type')">種類別</button><button onclick="libMode(this,'year')">年表</button></div></div>
+          <div class="card" id="libList"></div>
+        </section>
+
+        <!-- ================= FORUM ================= -->
+        <section class="screen" data-route="forum">
+          <div class="pagehead" style="align-items:center"><div><h1>フォーラム</h1></div><button class="btn sm fab-desk" onclick="go('idea')" style="margin-left:auto">＋ 投稿する</button></div>
+          <div class="row" style="margin-top:4px;justify-content:space-between;gap:8px">
+            <div class="chips scroll" style="margin:0;padding:0"><button class="chip on">すべて</button><button class="chip">アイデア</button><button class="chip">困りごと</button><button class="chip">相談（市から）</button><button class="chip">質問</button><button class="chip">お知らせ</button></div>
+          </div>
+          <div class="row" style="margin:10px 0 6px;justify-content:flex-end"><div class="seg"><button class="on">活発な順</button><button>新しい順</button></div></div>
+          <div class="card" style="padding:4px 16px"><div class="posts" id="forumList"></div></div>
+        </section>
+
+        <!-- ================= THREAD ================= -->
+        <section class="screen" data-route="thread">
+          <div class="pagehead"><button class="back" onclick="back()">‹</button><div><div class="row" style="gap:6px;margin-top:6px"><span class="pill">アイデア</span><span class="xs mute">観光と暮らし</span></div><h1 style="margin-top:6px">鎌高前踏切、週末だけでも警備員を置けませんか？</h1></div></div>
+          <div class="two">
+          <div>
+          <div class="card post">
+            <div class="ph"><div class="av ppl">た</div><div><b>七里ガ浜のたけ</b><span>市民・10月12日</span></div></div>
+            <p>週末の鎌高前踏切、人があふれて車道に出る人も多くて、子どもの通学が本当に危ないです。9月の議会で陳情は採択されたけど、具体的に誰が何をするかはまだ決まっていないはず。</p>
+            <p>警備員を置くとか、せめて週末だけでも何かできないですかね？ みなさんどう思いますか？</p>
+            <div class="react" style="margin:12px 0 0"><button onclick="react(this)" title="共感した" aria-label="共感した"><span class="em">😊</span><b>41</b></button><button onclick="react(this)" title="なるほど" aria-label="なるほど"><span class="em">😮</span><b>12</b></button><button onclick="react(this)" title="うーん" aria-label="うーん"><span class="em">🤔</span><b>3</b></button></div>
+          </div>
+
+          <h2 class="sec">コメント <span class="cnt">12 件</span></h2>
+          <div class="card cmts" style="padding:6px 16px 10px">
+            <div class="cmt"><div class="ph"><div class="av ppl">パ</div><div><b>腰越のパパ</b><span>市民・10月12日</span></div></div><p>毎週土曜、朝 9 時には踏切の前が渋滞です。住民で交代で見守るのも考えたけど、事故のときの責任が怖くて踏み切れていません。</p><div class="cm"><button onclick="react(this)" title="参考になった" aria-label="参考になった"><span class="em">👍</span><b>9</b></button><button aria-label="返信" title="返信"><svg class="i"><use href="#i-reply"/></svg></button></div></div>
+            <div class="cmt"><div class="ph"><div class="av city">市</div><div><b>市 観光課</b><span>鎌倉市・10月14日</span></div></div><p>ご指摘の状況は市も把握しています。警備員は 2 人・土日祝 60 日だと年 400 万円ほどで、観光費（4.1 億円）の約 1% です。試行なら来年度の予算で検討できます。</p><p>逆にお聞きしたいのですが、平日はどう感じていますか？ 週末だけの対策で足りるか、皆さんの実感を知りたいです。</p><div class="cm"><button onclick="react(this)" title="参考になった" aria-label="参考になった"><span class="em">👍</span><b>24</b></button><button aria-label="返信" title="返信"><svg class="i"><use href="#i-reply"/></svg></button></div>
+              <div class="cmt reply"><div class="ph"><div class="av ppl">た</div><div><b>七里ガ浜のたけ</b><span>市民・10月14日</span></div></div><p>平日は通学の時間だけ混みます。週末は一日中。まず週末からで十分だと思います。</p><div class="cm"><button onclick="react(this)" title="参考になった" aria-label="参考になった"><span class="em">👍</span><b>6</b></button><button aria-label="返信" title="返信"><svg class="i"><use href="#i-reply"/></svg></button></div></div>
+            </div>
+            <div class="cmt"><div class="ph"><div class="av biz">江</div><div><b>江ノ島電鉄</b><span>事業者・10月15日</span></div></div><p>七里ヶ浜側の踏切には週末に係員を置いています。鎌倉高校前も同じようにできるか、社内で確認します。</p><div class="cm"><button onclick="react(this)" title="参考になった" aria-label="参考になった"><span class="em">👍</span><b>18</b></button><button aria-label="返信" title="返信"><svg class="i"><use href="#i-reply"/></svg></button></div></div>
+            <div class="cmt"><div class="ph"><div class="av ppl">ユ</div><div><b>御成のユキ</b><span>市民・10月16日</span></div></div><p>警備員を置くと、人が別の踏切に移るだけになりませんか？ 写真を撮りたい人は減らないので、撮影してよい場所を決めて誘導するほうが効くかも。</p><div class="cm"><button onclick="react(this)" title="参考になった" aria-label="参考になった"><span class="em">👍</span><b>11</b></button><button aria-label="返信" title="返信"><svg class="i"><use href="#i-reply"/></svg></button></div>
+              <div class="cmt reply"><div class="ph"><div class="av ppl">た</div><div><b>七里ガ浜のたけ</b><span>市民・10月16日</span></div></div><p>撮影スポットの案、いいと思います。江ノ電さんの駅前の広場とか使えませんか？</p><div class="cm"><button onclick="react(this)" title="参考になった" aria-label="参考になった"><span class="em">👍</span><b>4</b></button><button aria-label="返信" title="返信"><svg class="i"><use href="#i-reply"/></svg></button></div></div>
+            </div>
+            <div class="cmt"><div class="ph"><div class="av giin">岡</div><div><b>岡田かずのり</b><span>市議会議員・10月18日</span></div></div><p>委員会でも取り上げます。市の試算（年 400 万円）と住民の見守りを組み合わせる形なら、12月定例会で質問できます。</p><div class="cm"><button onclick="react(this)" title="参考になった" aria-label="参考になった"><span class="em">👍</span><b>15</b></button><button aria-label="返信" title="返信"><svg class="i"><use href="#i-reply"/></svg></button></div></div>
+            <div class="cmt"><div class="ph"><div class="av ppl">ケ</div><div><b>大船のケン</b><span>市民・10月19日</span></div></div><p>費用は観光客にも負担してもらう形がいいです。宿泊税の使い道として考えられないでしょうか。</p><div class="cm"><button onclick="react(this)" title="参考になった" aria-label="参考になった"><span class="em">👍</span><b>7</b></button><button aria-label="返信" title="返信"><svg class="i"><use href="#i-reply"/></svg></button></div></div>
+            <button class="btn sec sm" style="margin:6px 0 2px">ほか 6 件のコメント</button>
+          </div>
+
+          <div class="card" style="margin-top:14px">
+            <textarea class="ta" rows="3" placeholder="コメントを書く" style="margin-top:0"></textarea>
+            <div class="row" style="margin-top:10px;gap:10px"><button class="icon-btn" aria-label="写真を追加"><svg class="i"><use href="#i-photo"/></svg></button><div style="flex:1"></div><button class="btn">投稿する</button></div>
+          </div>
+          </div>
+          <aside class="rail">
+          <h2 class="sec">関連</h2>
+          <div class="card"><div class="list"><div class="it" onclick="go('session')" style="cursor:pointer"><div class="t"><b>9月定例会</b><span>踏切の治安対策を求める陳情を採択</span></div><span class="arrow">›</span></div><div class="it" onclick="go('topics')" style="cursor:pointer"><div class="t"><b>テーマ: 観光と暮らし</b><span>経緯・資料</span></div><span class="arrow">›</span></div><div class="it" onclick="goKan('other')" style="cursor:pointer"><div class="t"><b>観光費</b><span>2025年度 4.1 億円</span></div><span class="arrow">›</span></div></div></div>
+          <h2 class="sec">似た投稿</h2>
+          <div class="card"><div class="list"><div class="it"><div class="t"><b>宿泊税を入れるなら、使い道は何がいい？</b><span>市 観光課・コメント 17</span></div><span class="arrow">›</span></div><div class="it"><div class="t"><b>小町通りの一方通行化の話はどうなった？</b><span>小町のハル・コメント 6</span></div><span class="arrow">›</span></div></div></div>
+          </aside>
+          </div>
+        </section>
+
+        <!-- ================= IDEA ================= -->
+        <section class="screen" data-route="idea">
+          <div class="pagehead"><button class="back" onclick="back()">‹</button><div><h1>投稿</h1></div></div>
+          <div class="card form">
+            <div class="chips"><span class="chip on">アイデア</span><span class="chip">困りごと</span><span class="chip">質問</span><span class="chip">お知らせ</span></div>
+            <div class="f"><input type="text" placeholder="タイトル"></div>
+            <div class="f"><textarea rows="7" placeholder="こういう問題を感じていて、こうしたらどうかと思うのですが、みなさんどうですか？"></textarea></div>
+            <div class="row" style="margin-top:12px;gap:10px"><button class="icon-btn" aria-label="写真を追加"><svg class="i"><use href="#i-photo"/></svg></button><div class="sp" style="flex:1"></div><button class="btn">投稿する</button></div>
+          </div>
+        </section>
+
+        <!-- ================= ME ================= -->
+        <section class="screen" data-route="me">
+          <div class="pagehead"><button class="back" onclick="back()">‹</button><div><h1>マイページ</h1></div></div>
+          <div class="card"><div class="row" style="gap:14px"><img src="assets/niho-takuya-profile.png" alt="" style="width:64px;height:64px;border-radius:50%;object-fit:cover"><div><b style="font-size:17px">由比ガ浜のまき</b><div class="row" style="gap:6px;margin-top:6px"><span class="pill go">鎌倉の人</span><span class="xs mute">NIHO アカウント</span></div></div></div></div>
+          <div class="card" style="margin-top:10px"><div class="list">
+            <div class="it"><svg class="i" style="color:var(--ink2)"><use href="#i-bell"/></svg><div class="t"><b>通知</b></div><span class="pill go">LINE</span><span class="arrow">›</span></div>
+            <div class="it"><svg class="i" style="color:var(--ink2)"><use href="#i-grid"/></svg><div class="t"><b>フォローしているテーマ</b></div><span class="v num">3</span><span class="arrow">›</span></div>
+            <div class="it"><svg class="i" style="color:var(--ink2)"><use href="#i-chat"/></svg><div class="t"><b>自分の投稿とコメント</b></div><span class="v num">7</span><span class="arrow">›</span></div>
+            <div class="it"><svg class="i" style="color:var(--ink2)"><use href="#i-user"/></svg><div class="t"><b>ニックネーム</b></div><span class="arrow">›</span></div>
+          </div></div>
+          <div class="row" style="margin-top:16px;justify-content:center"><button class="btn sec">ログアウト</button></div>
+        </section>
+
+        <!-- ================= GOALS ================= -->
+        <section class="screen" data-route="goals">
+          <div class="pagehead"><button class="back" onclick="back()">‹</button><div><h1>街のこれから</h1><div class="sub">かまくらビジョン 2034</div></div></div>
+          <div class="card" id="goalsFull"></div>
+          <div class="row" style="margin-top:12px;gap:14px"><span class="ext">総合計画（素案）PDF</span><span class="ext">市民意識調査</span></div>
+        </section>
+
+        <!-- ================= SESSION ================= -->
+        <section class="screen" data-route="session">
+          <div class="pagehead"><button class="back" onclick="back()">‹</button><div><h1>9月定例会</h1><div class="sub">2025.9.3 〜 9.30</div></div></div>
+          <div class="two">
+          <div>
+          <h2 class="sec">トピック</h2>
+          <div class="card tcard open" id="t1"><div class="head" onclick="toggle('t1')"><img class="thumb" src="assets/cityhall.jpg" alt=""><div style="flex:1;min-width:0"><h3>市役所は「2 拠点」に？ 両輪案が登場</h3><div class="lead">御成町に市長室と議会を残し、8 割の機能を深沢へ。条例改正なしで進める案に、議会から異論。</div></div><span class="caret">⌄</span></div>
+            <div class="body"><div class="react"><button onclick="react(this)" title="共感した" aria-label="共感した"><span class="em">😊</span><b>48</b></button><button onclick="react(this)" title="なるほど" aria-label="なるほど"><span class="em">😮</span><b>121</b></button><button onclick="react(this)" title="うーん" aria-label="うーん"><span class="em">🤔</span><b>63</b></button></div><div class="row" style="gap:6px;flex-wrap:wrap"><span class="pill soon"><span class="dot"></span>まだこれから</span><span class="pill">12月定例会で続き</span></div><div class="qa"><div class="q">吉岡和江議員・くりはらえりこ議員</div><div class="a">「これまでの議論をないがしろにする進め方ではないか」「住民投票を行うべき」と反発。総務省への見解確認の経緯を追及。</div></div><div class="qa"><div class="q">市長</div><div class="a">「いつ起こるか分からない災害への備えを早急に講じる必要がある」として<b>両輪案を進める姿勢</b>。</div></div><div class="links"><span class="ext">会議録 9/5</span><span class="ext">録画</span><button class="btn sm sec" onclick="go('topic-cityhall')">テーマの経緯</button></div></div></div>
+          <div class="card tcard" id="t2"><div class="head" onclick="toggle('t2')"><img class="thumb" src="assets/onari-es.jpg" alt=""><div style="flex:1;min-width:0"><h3>避難所が暑すぎる。体育館にエアコンは？</h3><div class="lead">7月の津波警報と9月の台風15号をふり返り、避難所の暑さとペット同行避難が議題に。</div></div><span class="caret">⌄</span></div>
+            <div class="body"><div class="react"><button onclick="react(this)" title="共感した" aria-label="共感した"><span class="em">😊</span><b>96</b></button><button onclick="react(this)" title="なるほど" aria-label="なるほど"><span class="em">😮</span><b>40</b></button><button onclick="react(this)" title="うーん" aria-label="うーん"><span class="em">🤔</span><b>5</b></button></div><div class="row" style="gap:6px;flex-wrap:wrap"><span class="pill go"><span class="dot"></span>決まった方向</span><span class="pill">2026年度の予算化を目指す</span></div><div class="qa"><div class="q">細川まなか議員</div><div class="a">「猛暑の影響は子どもたちの生活にも大きく影響している」。体育館にエアコンがあれば休み時間も過ごせる、と設置を要望。</div></div><div class="qa"><div class="q">市</div><div class="a">「喫緊の課題」と認め、<b>「少なくとも令和8年度の予算化を目指している」</b>と答弁。</div></div><div class="links"><span class="ext">会議録 9/5</span><span class="ext">録画</span><button class="btn sm sec" onclick="go('topic-heat')">テーマの経緯</button></div></div></div>
+          <div class="card tcard" id="t3"><div class="head" onclick="toggle('t3')"><img class="thumb" src="assets/sewer.jpg" alt=""><div style="flex:1;min-width:0"><h3>下水道管の 25% が耐用年数を超えている</h3><div class="lead">123km が 50 年超。全部直すと 270〜360 億円。八潮市の陥没事故を受けて優先順位を問う声。</div></div><span class="caret">⌄</span></div>
+            <div class="body"><div class="row" style="gap:6px;flex-wrap:wrap"><span class="pill soon"><span class="dot"></span>まだこれから</span></div><div class="qa"><div class="q">長嶋竜弘議員</div><div class="a">市内の下水管の約 25%、123km が耐用年数の 50 年を超えていることを市が答弁。</div></div><div class="qa"><div class="q">岡田かずのり議員</div><div class="a">「新庁舎建設よりも、こうしたインフラ維持を優先すべきではないか」。</div></div><div class="links"><span class="ext">会議録 9/8</span><span class="ext">録画</span></div></div></div>
+          <div class="card tcard" id="t4"><div class="head" onclick="toggle('t4')"><img class="thumb" src="assets/kamakoumae.jpg" alt=""><div style="flex:1;min-width:0"><h3>鎌高前踏切、観光客の増加で治安が悪化</h3><div class="lead">車道への飛び出し、私有地への侵入、ごみの放置。住民からの陳情を議会が全会一致で採択。</div></div><span class="caret">⌄</span></div>
+            <div class="body"><div class="row" style="gap:6px;flex-wrap:wrap"><span class="pill go"><span class="dot"></span>陳情を採択（全会一致）</span></div><div class="qa"><div class="q">上野学議員・大石香議員</div><div class="a">近隣の生活が脅かされている現状を訴え、警察官の常駐要請や防犯カメラの設置を求めた。</div></div><div class="qa"><div class="q">市長</div><div class="a">「看過できない状況」として、<b>早急な改善を約束</b>。</div></div><div class="links"><span class="ext">会議録 9/9</span><span class="ext">録画</span><button class="btn sm sec" onclick="go('thread')">フォーラムで話す</button></div></div></div>
+          <div class="card tcard" id="t5"><div class="head" onclick="toggle('t5')"><img class="thumb" src="assets/baby.jpg" alt=""><div style="flex:1;min-width:0"><h3>お産できる病院が市内 1 か所に。第2子の保育料も</h3><div class="lead">分娩施設の 1 つが令和8年で終了。妊産婦の交通費補助を求める声と、第2子保育料の年齢制限をなくす陳情が採択。</div></div><span class="caret">⌄</span></div>
+            <div class="body"><div class="row" style="gap:6px;flex-wrap:wrap"><span class="pill go"><span class="dot"></span>陳情を採択</span><span class="pill soon"><span class="dot"></span>交通費補助はこれから</span></div><div class="qa"><div class="q">大石香議員・前川綾子議員</div><div class="a">妊産婦への交通費補助や不安解消のための施策を強く要望。</div></div><div class="links"><span class="ext">会議録 9/10</span><span class="ext">録画</span></div></div></div>
+          </div>
+          <aside class="rail">
+            <h2 class="sec">採決の結果</h2>
+            <div class="card"><div class="list"><div class="it"><div class="t"><b>令和6年度 一般会計の決算</b><span>9月30日</span></div><span class="pill done">認定・賛成多数</span></div><div class="it"><div class="t"><b>鎌高前踏切の治安対策を求める陳情</b><span>9月30日</span></div><span class="pill go">採択・全会一致</span></div><div class="it"><div class="t"><b>第2子保育料の年齢制限撤廃を求める陳情</b><span>9月30日</span></div><span class="pill go">採択</span></div></div><div class="hr"></div><span class="ext">議案と陳情のすべて（市のページ）</span></div>
+            <h2 class="sec">日程</h2>
+            <div class="card"><div class="list"><div class="it"><div class="date"><b>9/3</b><span>水</span></div><div class="t"><b>開会・議案の説明</b></div></div><div class="it"><div class="date"><b>9/4</b><span>木</span></div><div class="t"><b>一般質問</b><span>〜 9/11・18人</span></div></div><div class="it"><div class="date"><b>9/30</b><span>火</span></div><div class="t"><b>採決・閉会</b></div></div></div></div>
+          </aside>
+          </div>
+        </section>
+
+        <!-- ================= BUDGET ================= -->
+        <section class="screen" data-route="budget">
+          <div class="pagehead"><button class="back" onclick="back()">‹</button><div><h1>2025年度の予算</h1><div class="sub">鎌倉市 一般会計・当初予算</div></div></div>
+          <div class="hero">
+            <div class="big">810<small>億円</small></div>
+            <div class="stat2"><div class="st"><b class="num">+65億円</b><span>去年より（+8.8%）</span></div><div class="st"><b class="num">47万円</b><span>市民ひとりあたり・1 年</span></div><div class="st"><b class="num">3.9万円</b><span>市民ひとりあたり・ひと月</span></div><div class="st"><b class="num">386億円</b><span>市税（お金の 48%）</span></div></div>
+          </div>
+          <h2 class="sec">ひとりあたり、ひと月に</h2>
+          <div class="card"><div class="bars" id="perPerson"></div></div>
+          <h2 class="sec">何に使う？</h2>
+          <div class="card" style="padding:10px"><div class="treemap" id="treemap"></div></div>
+          <div class="budget-cols">
+            <div><h2 class="sec">去年から変わったこと</h2><div class="card"><div class="div" id="diffBars"></div></div></div>
+            <div><h2 class="sec">お金はどこから</h2><div class="card"><div class="stack" id="revStack"></div><div class="stack-legend" id="revLegend"></div></div></div>
+          </div>
+          <div class="budget-cols">
+            <div><h2 class="sec">どんな形で払う？</h2><div class="card"><div class="stack" id="natStack"></div><div class="stack-legend" id="natLegend"></div></div></div>
+            <div><h2 class="sec">あなたの関心から</h2><div class="chips" id="interest"><button class="chip on" onclick="interest(this,'kids')">子育て</button><button class="chip" onclick="interest(this,'bosai')">防災</button><button class="chip" onclick="interest(this,'kanko')">観光</button><button class="chip" onclick="interest(this,'gomi')">ごみ</button><button class="chip" onclick="interest(this,'school')">学校</button></div><div class="card" style="margin-top:10px"><div class="list" id="interestList"></div></div></div>
+          </div>
+          <div class="row" style="margin-top:14px;gap:10px;flex-wrap:wrap"><button class="btn sec sm">事業を検索</button><button class="btn sec sm">CSV で書き出す</button><span class="ext">市の予算書（PDF）</span></div>
+        </section>
+
+        <!-- ================= BUDGET: KAN ================= -->
+        <section class="screen" data-route="kan">
+          <div class="pagehead"><button class="back" onclick="back()">‹</button><div><h1 id="kanTitle">福祉・子育て・医療</h1><div class="sub" id="kanSub">民生費</div></div></div>
+          <div class="hero" style="padding:16px 18px"><div class="row" style="align-items:baseline;gap:10px"><div class="big num" id="kanAmt" style="margin:0">331<small>億円</small></div><span class="pill" id="kanShare">予算の 40.9%</span></div><div class="stat2" style="grid-template-columns:1fr 1fr"><div class="st"><b class="num" id="kanDiff">+25.9億円</b><span>去年より</span></div><div class="st"><b class="num" id="kanPer">1.6万円</b><span>ひとりあたり・ひと月</span></div></div></div>
+          <h2 class="sec">主な事業 <span class="cnt">金額の大きい順</span></h2>
+          <div class="card"><div class="list" id="kanList"></div></div>
+          <h2 class="sec">この分野が話題になった議会</h2>
+          <div class="card"><div class="list" id="kanTopics"></div></div>
+        </section>
+
+        <!-- ================= BUDGET: PROJECT ================= -->
+        <section class="screen" data-route="project">
+          <div class="pagehead"><button class="back" onclick="back()">‹</button><div><h1>放課後かまくらっ子</h1><div class="sub">放課後子ども総合プラン等管理運営事業・青少年課</div></div></div>
+          <div class="hero" style="padding:16px 18px"><div class="row" style="align-items:baseline;gap:10px"><div class="big num" style="margin:0">4.56<small>億円</small></div><span class="pill">福祉・子育て・医療</span></div><div class="cap" style="margin-top:8px">市内の小学生が放課後を過ごせる場所を、16 の「子どもの家」で運営する。全ての児童が対象。</div></div>
+          <h2 class="sec">内訳</h2><div class="card"><div class="bars" id="projBars"></div></div>
+          <h2 class="sec">お金の出どころ</h2><div class="card"><div class="stack"><i style="width:34%;background:var(--o2)"></i><i style="width:17%;background:var(--o3)"></i><i style="width:49%;background:var(--o1)"></i></div><div class="stack-legend" style="grid-template-columns:1fr 1fr 1fr"><div class="l"><i style="background:var(--o2)"></i>国<b>34%</b></div><div class="l"><i style="background:var(--o3)"></i>県<b>17%</b></div><div class="l"><i style="background:var(--o1)"></i>市<b>49%</b></div></div></div>
+          <h2 class="sec">去年から</h2><div class="card"><div class="list"><div class="it"><div class="t"><b>2024年度</b></div><span class="v num">4.31億円</span></div><div class="it"><div class="t"><b>2025年度</b><span>エアコンの取替（2 か所）と各所の修繕を追加</span></div><span class="v num">4.56億円</span></div></div></div>
+          <div class="row" style="margin-top:14px;gap:14px"><span class="ext">予算書 p.48（PDF）</span><span class="ext">事業のページ（市）</span></div>
+        </section>
+
+        <!-- ================= MEMBER ================= -->
+        <section class="screen" data-route="member">
+          <div class="pagehead"><button class="back" onclick="back()">‹</button><div><h1>細川まなか 議員</h1><div class="sub">議席 1 番</div></div></div>
+          <h2 class="sec">質問したテーマ</h2><div class="chips"><span class="chip on" onclick="go('topic-heat')">学校の暑さ対策</span><span class="chip">防災</span><span class="chip">子育て</span></div>
+          <h2 class="sec">9月定例会での質問</h2>
+          <div class="card"><div class="qa" style="margin:0"><div class="q">体育館のエアコン設置について</div><div class="a">「猛暑の影響は子どもたちの生活にも大きく影響している」「体育館にエアコンが設置されていれば、高温の日にも休み時間に体育館で過ごすことができる」</div></div><div class="qa"><div class="q">市の答弁</div><div class="a">「喫緊の課題」。<b>「少なくとも令和8年度の予算化を目指している」</b></div></div><div class="links"><span class="ext">会議録 9/5</span><span class="ext">録画</span><button class="btn sm sec" onclick="go('topic-heat')">テーマの経緯</button></div></div>
+          <h2 class="sec">発言した議会</h2><div class="card"><div class="list"><div class="it" onclick="go('session')" style="cursor:pointer"><div class="t"><b>9月定例会</b><span>一般質問 9/5</span></div><span class="arrow">›</span></div><div class="it"><div class="t"><b>6月定例会</b><span>一般質問 6/10</span></div><span class="arrow">›</span></div></div></div>
+        </section>
+
+        <!-- ================= ASK ================= -->
+        <section class="screen" data-route="ask">
+          <div class="pagehead"><button class="back" onclick="back()">‹</button><div><h1>聞く</h1></div></div>
+          <div class="search"><span class="ic">?</span><input type="text" value="体育館のエアコンはどうなった？"></div>
+          <div class="answer" style="margin-top:12px"><div class="q">体育館のエアコンはどうなった？</div><div class="a">9月定例会で細川まなか議員が設置を求め、市は「喫緊の課題」として<b>「少なくとも令和8年度（2026年度）の予算化を目指している」</b>と答えました。設置が決まったわけではなく、<b>2026年2月定例会の予算案</b>で中身が分かります。</div><div class="src"><a onclick="go('topic-heat')">テーマ: 学校の暑さ対策</a><a onclick="go('session')">9月定例会のまとめ</a><a>会議録 2025年9月5日（原文）</a></div><div class="meta-row"><span class="m">要約</span></div></div>
+          <h2 class="sec">よく聞かれていること</h2><div class="chips"><span class="chip">市役所はどこに移るの？</span><span class="chip">下水道料金は上がるの？</span><span class="chip">保育料はいつから無料？</span></div>
+        </section>
+
+      </main>
+
+      <button class="fab" aria-label="投稿する" onclick="go('idea')">＋</button>
+
+      <nav class="dock" id="dock">
+        <div class="in">
+          <button data-nav="home" onclick="go('home')"><svg><use href="#i-home"/></svg>ホーム</button>
+          <button data-nav="topics" onclick="go('topics')"><svg><use href="#i-grid"/></svg>テーマ</button>
+          <button data-nav="session" onclick="go('session')"><svg><use href="#i-cal"/></svg>議会</button>
+          <button data-nav="forum" onclick="go('forum')"><svg><use href="#i-bulb"/></svg>フォーラム</button>
+          <button data-nav="budget" onclick="go('budget')"><svg><use href="#i-tree"/></svg>予算</button>
+        </div>
+      </nav>
+
+    </div>
+  </div>
+  </div>
+</div>
+
+<script>
+/* ===== data ===== */
+const IMGMAP={};function img(n){return IMGMAP[n]||('assets/'+n);}
+const POP=171800;
+const KAN=[
+ {key:'minsei',jp:'福祉・子育て・医療',kan:'民生費',amt:331.3,share:40.9,diff:25.9,projects:[['生活を支える給付（生活保護）','生活福祉課',52.1],['後期高齢者医療への繰出','保険年金課',25.4],['保育所の運営','保育課',24.8],['障害福祉サービス','障害福祉課',21.6],['国民健康保険への繰出','保険年金課',13.3],['児童手当','こども支援課',12.9],['放課後かまくらっ子','青少年課',4.56]],topics:[['産科と子育て','9月定例会・質問 4件'],['第2子保育料の年齢制限','9月定例会・陳情を採択']]},
+ {key:'doboku',jp:'道路・まちづくり',kan:'土木費',amt:122.9,share:15.2,diff:17.9,projects:[['下水道事業への繰出','都市整備総務課',32.9],['深沢地域の整備','深沢地域整備課',5.4],['道路の維持補修','道路課',3.2],['公園の維持管理','みどり公園課',1.6]],topics:[['下水道の老朽化','9月定例会・質問 2件'],['市役所の移転','9月定例会・質問 6件']]},
+ {key:'somu',jp:'市役所の運営',kan:'総務費',amt:101.3,share:12.5,diff:21.1,projects:[['職員の給与','職員課',14.2],['本庁舎等整備事業','公的不動産活用課',3.3],['庁舎の管理','公的不動産活用課',2.7],['鎌倉芸術館の運営','文化課',1.4]],topics:[['市役所の移転','9月定例会・質問 6件']]},
+ {key:'eisei',jp:'ごみ・健康',kan:'衛生費',amt:87.2,share:10.8,diff:18.1,projects:[['ごみ処理の計画と施設','ごみ減量対策課',20.3],['ごみの収集','ごみ減量対策課',8.9],['ごみの資源化','ごみ減量対策課',6.3],['予防接種','市民健康課',3.7],['母子保健','こども家庭相談課',1.9]],topics:[['ごみの行き先','6月定例会・質問 3件']]},
+ {key:'kyoiku',jp:'学校・教育',kan:'教育費',amt:78.6,share:9.7,diff:-8.6,projects:[['小学校の施設管理','学校施設課',3.8],['学校給食','学務課',3.1],['生涯学習センターの運営','生涯学習課',3.1],['史跡の環境整備','文化財課',2.1]],topics:[['学校の暑さ対策','9月定例会・質問 1件']]},
+ {key:'kosai',jp:'借金の返済',kan:'公債費',amt:36.8,share:4.5,diff:-4.4,projects:[['市債の元金の返済','財政課',32.4],['市債の利子','財政課',4.4]],topics:[]},
+ {key:'shobo',jp:'消防・救急',kan:'消防費',amt:30.8,share:3.8,diff:-5.5,projects:[['消防署の運営','消防総務課',18.9],['救急','警防救急課',4.1],['消防団','消防総務課',1.3]],topics:[['防災（津波・台風・避難所）','9月定例会・質問 5件']]},
+ {key:'other',jp:'そのほか',kan:'農林水産・商工・観光・議会など',amt:20.7,share:2.6,diff:0.8,projects:[['農業・漁業','農水産課',5.9],['商業・産業','商工課',4.8],['市議会','議会総務課',4.4],['観光','観光課',4.1],['働く支援','商工課',0.9]],topics:[['観光と暮らし','9月定例会・陳情を採択']]}
+];
+const REV=[['市税',385.9,47.7],['国から',139.4,17.2],['県から',56.0,6.9],['貯金から',54.5,6.7],['消費税の配分',43.2,5.3],['借金（市債）',42.4,5.2],['寄附',30.1,3.7],['そのほか',58.2,7.3]];
+const NAT=[['給付（扶助費）',204.5,25.3],['委託・物件費',201.7,24.9],['人件費',143.7,17.7],['建設事業',77.6,9.6],['借金の返済',37.3,4.6],['補助金など',30.6,3.8],['そのほか',114.3,14.1]];
+const PROJ=[['指定管理料（16 施設）',3.30],['各所の修繕',1.03],['省エネ改修の修繕',0.65],['エアコンの取替（2 か所）',0.69],['消耗品など',0.12]];
+const INTEREST={kids:[['放課後かまくらっ子','福祉・子育て・医療',4.56,'project'],['保育所の運営','福祉・子育て・医療',24.8],['児童手当','福祉・子育て・医療',12.9],['母子保健','ごみ・健康',1.9],['学校給食','学校・教育',3.1]],bosai:[['消防署の運営','消防・救急',18.9],['避難所の備蓄','市役所の運営',0.8],['津波避難路の整備','道路・まちづくり',0.6]],kanko:[['観光','そのほか',4.1],['鎌高前踏切の安全対策','道路・まちづくり',0.3]],gomi:[['ごみ処理の計画と施設','ごみ・健康',20.3],['ごみの収集','ごみ・健康',8.9],['ごみの資源化','ごみ・健康',6.3]],school:[['小学校の施設管理','学校・教育',3.8],['学校給食','学校・教育',3.1],['体育館の空調（検討）','学校・教育',0]]};
+const TOPICS=[
+ {key:'cityhall',route:'topic-cityhall',img:'cityhall.jpg',t:'市役所の移転',p:'御成町に残すか、深沢へ移すか。8 年ごしの論点。',pill:['soon','12月定例会で動き'],stamps:213,docs:48,props:2,tags:['暮らし','お金','防災']},
+ {key:'heat',route:'topic-heat',img:'onari-es.jpg',t:'学校の暑さ対策',p:'体育館にエアコンを。避難所としての備えも。',pill:['go','予算化へ'],stamps:96,docs:11,props:1,tags:['子育て','防災']},
+ {key:'sewer',img:'sewer.jpg',t:'下水道の老朽化',p:'25% が耐用年数超え。直すと 270〜360 億円。',pill:['','質問 2件'],stamps:44,docs:9,props:0,tags:['暮らし','お金']},
+ {key:'tourism',img:'hachimangu.jpg',t:'観光と暮らし',p:'鎌高前踏切の混雑、宿泊税、マナー。',pill:['go','陳情を採択'],stamps:158,docs:22,props:3,tags:['観光','暮らし']},
+ {key:'birth',img:'baby.jpg',t:'産科と子育て',p:'お産できる病院が 1 か所に。第2子の保育料。',pill:['','質問 4件'],stamps:71,docs:8,props:1,tags:['子育て']},
+ {key:'gomi',img:'garbage-truck.jpg',t:'ごみの行き先',p:'燃やすごみは逗子市へ。令和16年度まで。',pill:['','6月定例会'],stamps:37,docs:14,props:2,tags:['暮らし']},
+ {key:'tsunami',img:'zaimokuza.jpg',t:'津波と避難',p:'7月の津波警報で見えた課題。避難所と情報。',pill:['','質問 5件'],stamps:120,docs:17,props:4,tags:['防災']},
+ {key:'bus',img:'kamakura-station.jpg',t:'バスと移動',p:'路線バスの廃止と、駅までの足。',pill:['soon','陳情を審査中'],stamps:52,docs:6,props:1,tags:['暮らし']},
+];
+const GOALS=[
+ {t:'市の取組に意見を届けられている市民',now:7.3,prev:null,dir:'up',unit:'%',src:'市民意識調査 2025・施策 5-5 広聴'},
+ {t:'市政への参画を実感している市民',now:31.4,prev:null,dir:'up',unit:'%',src:'施策 5-5 広聴'},
+ {t:'観光客の多い鎌倉での生活に満足',now:24.7,prev:34.5,dir:'up',unit:'%',src:'市民意識調査 2024→2026'},
+ {t:'市民活動・ボランティアに参加',now:12.5,prev:null,dir:'up',unit:'%',src:'地域福祉アンケート 2025'},
+ {t:'これからも鎌倉に住み続けたい',now:91.2,prev:null,dir:'keep',unit:'%',src:'市民意識調査 2025'},
+ {t:'鎌倉は豊かで安全なまちだと思う',now:39.2,prev:null,dir:'up',unit:'%',src:'かまくらビジョン 2034'},
+];
+const POSTS=[
+ {t:'鎌高前踏切、週末だけでも警備員を置けませんか？',by:'七里ガ浜のたけ',who:'ppl',cat:'アイデア',n:12,when:'2 時間前',route:'thread'},
+ {t:'燃やすごみの行き先、みなさんの考えを聞かせてください',by:'市 環境部',who:'city',cat:'相談',n:24,when:'昨日'},
+ {t:'夏休みの体育館、暑くて使えない。涼める場所として開放できない？',by:'腰越のパパ',who:'ppl',cat:'困りごと',n:9,when:'3 日前'},
+ {t:'宿泊税を入れるなら、使い道は何がいい？',by:'市 観光課',who:'city',cat:'相談',n:17,when:'4 日前'},
+ {t:'市役所が移るなら、跡地を芝生の広場にしたい',by:'御成のユキ',who:'ppl',cat:'アイデア',n:19,when:'5 日前'},
+ {t:'小町通りの一方通行化の話はどうなった？',by:'小町のハル',who:'ppl',cat:'質問',n:6,when:'1 週間前'},
+ {t:'由比ヶ浜のごみ箱、夏だけ 6 か所増えました（市と海の家で）',by:'由比ガ浜のまき',who:'ppl',cat:'お知らせ',n:4,when:'1 週間前'},
+ {t:'12月定例会の議案、気になるものはありますか？',by:'岡田かずのり',who:'giin',cat:'質問',n:8,when:'1 週間前'},
+];
+const LEDGER=[['由比ヶ浜のごみ箱（夏だけ 6 か所）','市 環境部と海の家が実施','go','動いている'],['鎌倉駅西口のベンチ','商店会と市で 3 台設置','done','決まった'],['小町通りの一方通行','市・商店会・住民で交通量調査から','soon','話し合い中'],['学校の体育館の暑さ','3 校で先行、2026年度予算へ','go','動いている']];
+const LIB=[
+ ['plan','新庁舎整備「両輪体制」の考え方（整理表）','鎌倉市','2025.10.30','PDF'],
+ ['qa','9月定例会 本会議 一般質問（庁舎・吉岡議員）','会議録','2025.9.5','原文'],
+ ['qa','9月定例会 本会議 一般質問（庁舎・くりはら議員）','会議録','2025.9.5','原文'],
+ ['video','9月定例会 本会議 録画（9/5）','議会中継','2025.9.5','動画'],
+ ['com','総務常任委員会 資料「本庁舎の位置と両輪案」','市議会','2025.9.12','PDF'],
+ ['pub','パブリックコメントの結果（85 通）と市の考え方','鎌倉市','2025.9','PDF'],
+ ['ppl','市民対話の報告書（47 名）','鎌倉市','2025.8','PDF'],
+ ['news','市長選、庁舎移転が最大の争点に','神奈川新聞','2025.10.20','記事'],
+ ['budget','本庁舎等整備事業 3.3億円（2025年度）','予算書','2025.3','ページ'],
+ ['bill','鎌倉市役所の位置に関する条例の一部改正（否決）','議案','2022.12','PDF'],
+ ['vote','位置条例改正案の採決（16 対 10）','本会議','2022.12.16','原文'],
+ ['council','新庁舎整備 市民検討会議 議事録（第 1〜6 回）','審議会','2021〜2022','PDF'],
+ ['ppl','住民投票条例の直接請求（8,270 筆）','市民','2018.2','ページ'],
+];
+const LIBTYPES={bill:['議案','i-doc','c1'],com:['委員会','i-people','c1'],qa:['質疑','i-chat','c1'],vote:['採決','i-check','c1'],budget:['予算','i-coin','c3'],plan:['市の計画','i-map','c2'],pub:['パブコメ','i-mega','c4'],council:['審議会','i-people','c2'],news:['報道','i-news','c4'],ppl:['市民の声','i-heart','c5'],video:['録画','i-video','c1']};
+const URLS={home:'gikai.niho.life/',topics:'gikai.niho.life/topics','topic-cityhall':'gikai.niho.life/topics/city-hall','topic-heat':'gikai.niho.life/topics/school-heat',library:'gikai.niho.life/topics/city-hall/library',forum:'gikai.niho.life/forum',thread:'gikai.niho.life/forum/1842',idea:'gikai.niho.life/forum/new',me:'gikai.niho.life/me',goals:'gikai.niho.life/goals',session:'gikai.niho.life/sessions/2025-09',budget:'gikai.niho.life/budget/2025',kan:'gikai.niho.life/budget/2025/',project:'gikai.niho.life/budget/2025/p/houkago-kamakurakko',member:'gikai.niho.life/members/hosokawa-manaka',ask:'gikai.niho.life/ask?q=体育館のエアコン'};
+const GREENS=['--g6','--g5','--g4','--g3','--g2','--g1','--g1','--g1'];
+const OCHRE=['--o5','--o4','--o3','--o2','--o1','--o1','--o1','--grey'];
+const NAV={home:'home',topics:'topics','topic-cityhall':'topics','topic-heat':'topics',library:'library',forum:'forum',thread:'forum',idea:'forum',me:'',goals:'home',session:'session',budget:'budget',kan:'budget',project:'budget',member:'session',ask:'home'};
+
+/* ===== routing ===== */
+const hist=[];let cur='home';let curKan='minsei';
+function setUrl(route){let u=URLS[route]||'gikai.niho.life/';if(route==='kan')u+=curKan;const i=u.indexOf('/');document.getElementById('url').innerHTML=u.slice(0,i)+'<b>'+u.slice(i)+'</b>';}
+function show(route){cur=route;document.getElementById('app').dataset.route=route;document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.dataset.route===route));setUrl(route);document.getElementById('screens').scrollTop=0;const n=NAV[route];document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('on',b.dataset.nav===n));if(route==='budget'){drawTreemap();requestAnimationFrame(drawTreemap);}}
+function go(route){if(route!==cur)hist.push(cur);show(route);}
+function back(){show(hist.pop()||'home');}
+function toggle(id){document.getElementById(id).classList.toggle('open');}
+function yen(x){return x.toLocaleString('ja-JP');}
+function perMonth(amt){return Math.round(amt*1e8/POP/12);}
+function fmtOku(v){return v>=100?Math.round(v):v.toFixed(v<1?2:1);}
+function goKan(key){curKan=key;const k=KAN.find(x=>x.key===key);document.getElementById('kanTitle').textContent=k.jp;document.getElementById('kanSub').textContent=k.kan;document.getElementById('kanAmt').innerHTML=fmtOku(k.amt)+'<small>億円</small>';document.getElementById('kanShare').textContent='予算の '+k.share+'%';document.getElementById('kanDiff').textContent=(k.diff>=0?'+':'−')+Math.abs(k.diff).toFixed(1)+'億円';const pm=perMonth(k.amt);document.getElementById('kanPer').textContent=(pm>=10000?(pm/10000).toFixed(1)+'万円':yen(pm)+'円');
+ document.getElementById('kanList').innerHTML=k.projects.map(p=>`<div class="it" ${p[0]==='放課後かまくらっ子'?'onclick="go(\'project\')" style="cursor:pointer"':''}><div class="t"><b>${p[0]}</b><span>${p[1]}</span></div><span class="v num">${fmtOku(p[2])}億円</span><span class="arrow">›</span></div>`).join('')+`<div class="it"><div class="t"><span>ほか ${Math.max(0,54-k.projects.length)} 事業</span></div><button class="btn sm sec">すべて見る</button></div>`;
+ document.getElementById('kanTopics').innerHTML=k.topics.length?k.topics.map(x=>`<div class="it" onclick="go('session')" style="cursor:pointer"><div class="t"><b>${x[0]}</b><span>${x[1]}</span></div><span class="arrow">›</span></div>`).join(''):'<div class="it"><div class="t"><span>直近 1 年の議会で質問はありません</span></div></div>';
+ go('kan');}
+
+/* ===== treemap ===== */
+function squarify(items,W,H){const total=items.reduce((a,b)=>a+b.v,0);const scale=W*H/total;const data=items.map(it=>({...it,a:it.v*scale}));const rects=[];let x=0,y=0,w=W,h=H;let row=[];let i=0;const worst=(r,len)=>{const s=r.reduce((a,b)=>a+b.a,0);const mx=Math.max(...r.map(q=>q.a)),mn=Math.min(...r.map(q=>q.a));return Math.max(len*len*mx/(s*s),s*s/(len*len*mn));};function layout(r){const s=r.reduce((a,b)=>a+b.a,0);if(w>=h){const cw=s/h;let cy=y;r.forEach(q=>{const rh=q.a/cw;rects.push({...q,x,y:cy,w:cw,h:rh});cy+=rh;});x+=cw;w-=cw;}else{const rh=s/w;let cx=x;r.forEach(q=>{const rw=q.a/rh;rects.push({...q,x:cx,y,w:rw,h:rh});cx+=rw;});y+=rh;h-=rh;}}while(i<data.length){const len=Math.min(w,h);const it=data[i];if(row.length===0||worst(row.concat([it]),len)<=worst(row,len)){row.push(it);i++;}else{layout(row);row=[];}}if(row.length)layout(row);return rects;}
+function drawTreemap(){const el=document.getElementById('treemap');const W=el.clientWidth,H=el.clientHeight;if(!W)return;const rects=squarify(KAN.map(k=>({key:k.key,jp:k.jp,kan:k.kan,amt:k.amt,v:k.amt})),W,H);el.innerHTML='';rects.forEach(r=>{const d=document.createElement('div');const rank=KAN.findIndex(k=>k.key===r.key);d.className='tile'+(rank>=4?' ink':'')+((r.w<78||r.h<44)?' tiny':'')+((r.w<46||r.h<28)?' tiny2':'');d.style.cssText=`left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;background:var(${GREENS[rank]})`;d.innerHTML=`<div class="n">${r.jp}</div><div class="a num">${fmtOku(r.amt)}億円</div><div class="k">${r.kan}</div>`;d.title=`${r.jp}（${r.kan}）${r.amt}億円`;d.onclick=()=>goKan(r.key);el.appendChild(d);});}
+
+/* ===== charts ===== */
+function drawPerPerson(){const el=document.getElementById('perPerson');const max=perMonth(KAN[0].amt);el.innerHTML=KAN.map((k,i)=>{const pm=perMonth(k.amt);return `<div class="brow"><div class="n">${k.jp}<small>${k.kan}</small></div><div class="bar"><i style="width:${Math.max(2,pm/max*100)}%;background:var(${GREENS[i]})"></i></div><div class="v num">${pm>=10000?(pm/10000).toFixed(1)+'万円':yen(pm)+'円'}</div></div>`;}).join('')+`<div class="xs mute" style="margin-top:4px">合計 3.9万円（47万円 ÷ 12 か月）</div>`;const m=document.getElementById('miniStack');if(m)m.innerHTML=KAN.map((k,i)=>`<i style="width:${k.share}%;background:var(${GREENS[i]})" title="${k.jp} ${k.share}%"></i>`).join('');}
+function drawDiff(){const el=document.getElementById('diffBars');const rows=[...KAN].filter(k=>k.key!=='other').sort((a,b)=>b.diff-a.diff);const max=Math.max(...rows.map(r=>Math.abs(r.diff)));el.innerHTML=rows.map(r=>{const pct=Math.abs(r.diff)/max*48;const pos=r.diff>=0;return `<div class="drow"><div class="n">${r.jp}</div><div class="trk"><i style="${pos?'left:50%':'right:50%'};width:${pct}%"></i></div><div class="v num">${pos?'+':'−'}${Math.abs(r.diff).toFixed(1)}億</div></div>`;}).join('');}
+function drawStack(stackId,legendId,rows,ramp){document.getElementById(stackId).innerHTML=rows.map((r,i)=>`<i style="width:${r[2]}%;background:var(${ramp[i]})" title="${r[0]} ${r[1]}億円（${r[2]}%）"></i>`).join('');document.getElementById(legendId).innerHTML=rows.map((r,i)=>`<div class="l"><i style="background:var(${ramp[i]})"></i>${r[0]}<b class="num">${Math.round(r[1])}億円</b></div>`).join('');}
+function drawProj(){const el=document.getElementById('projBars');const max=PROJ[0][1];el.innerHTML=PROJ.map((p,i)=>`<div class="brow" style="grid-template-columns:9em 1fr auto"><div class="n">${p[0]}</div><div class="bar"><i style="width:${p[1]/max*100}%;background:var(${GREENS[Math.min(i,5)]})"></i></div><div class="v num">${p[1].toFixed(2)}億円</div></div>`).join('');}
+function interest(btn,key){document.querySelectorAll('#interest .chip').forEach(c=>c.classList.toggle('on',c===btn));document.getElementById('interestList').innerHTML=INTEREST[key].map(r=>`<div class="it" ${r[3]?'onclick="go(\'project\')" style="cursor:pointer"':''}><div class="t"><b>${r[0]}</b><span>${r[1]}</span></div><span class="v num">${r[2]?fmtOku(r[2])+'億円':'—'}</span><span class="arrow">›</span></div>`).join('');}
+
+/* ===== topics / goals / proposals / library ===== */
+function topicCard(t,home){return `<div class="tcardp${t.route?'':' off'}" ${t.route?`onclick="go('${t.route}')"`:''}><div class="im"><img src="${img(t.img)}" alt="">${t.pill[1]?`<span class="pill ${t.pill[0]}">${t.pill[0]?'<span class="dot"></span>':''}${t.pill[1]}</span>`:''}</div><div class="bd"><b>${t.t}</b>${home?'':`<p>${t.p}</p>`}</div></div>`;}
+function drawTopics(){document.getElementById('topicGrid').innerHTML=TOPICS.map(t=>topicCard(t,false)).join('');document.getElementById('homeThemes').innerHTML=TOPICS.slice(0,5).map(t=>topicCard(t,true)).join('');}
+function ring(pct){const r=21,c=2*Math.PI*r;return `<div class="ring"><svg viewBox="0 0 54 54"><circle class="bg" cx="27" cy="27" r="${r}"/><circle class="fg" cx="27" cy="27" r="${r}" stroke-dasharray="${c}" stroke-dashoffset="${c*(1-Math.min(1,pct))}"/></svg><b>${Math.round(pct*100)}%</b></div>`;}
+function goalRow(g){const trend=g.prev==null?'':(g.now>g.prev?`<span class="pill go">↗ ${g.prev}% から</span>`:`<span class="pill red">↘ ${g.prev}% から</span>`);const goal=g.dir==='up'?'目標 ⇗ 上げる':'目標 ⇒ 保つ';return `<div class="goal"><div class="gv"><b class="num">${g.now}<small>${g.unit}</small></b></div><div class="t"><b>${g.t}</b><span>${goal}・${g.src}</span>${trend?'<div style="margin-top:5px">'+trend+'</div>':''}</div></div>`;}
+function drawGoals(){document.getElementById('homeGoals').innerHTML=GOALS.slice(0,3).map(goalRow).join('');document.getElementById('goalsFull').innerHTML=GOALS.map(goalRow).join('');}
+function drawForum(){const who={ppl:['市民','ppl'],city:['市','city'],giin:['議員','giin']};document.getElementById('forumList').innerHTML=POSTS.map(p=>`<div class="po" ${p.route?`onclick="go('${p.route}')"`:''}><div class="av ${who[p.who][1]}">${p.by.replace(/^市 /,'').slice(0,1)}</div><div class="t"><b>${p.t}</b><span><i class="av ${who[p.who][1]}" style="width:auto;height:auto;display:inline;font-size:10.5px">${who[p.who][0]}</i>${p.by.replace(/^市 /,'')}・${p.cat}・${p.when}</span></div><div class="n"><svg class="i" style="width:15px;height:15px"><use href="#i-chat"/></svg>${p.n}</div></div>`).join('');}
+let libT='all',libM='type';
+function drawLib(){const types=document.getElementById('libTypes');const counts={};LIB.forEach(l=>counts[l[0]]=(counts[l[0]]||0)+1);types.innerHTML=`<div class="lt${libT==='all'?' on':''}" onclick="libType('all')"><div class="ic" style="background:${libT==='all'?'rgba(255,255,255,.15)':'var(--sand)'}"><svg class="i"><use href="#i-book"/></svg></div><b>すべて</b><span>${LIB.length}</span></div>`+Object.keys(LIBTYPES).filter(k=>counts[k]).map(k=>`<div class="lt${libT===k?' on':''}" onclick="libType('${k}')"><div class="ic ${libT===k?'':LIBTYPES[k][2]}" style="${libT===k?'background:rgba(255,255,255,.15)':''}"><svg class="i"><use href="#${LIBTYPES[k][1]}"/></svg></div><b>${LIBTYPES[k][0]}</b><span>${counts[k]}</span></div>`).join('');
+ const rows=LIB.filter(l=>libT==='all'||l[0]===libT);const row=l=>`<div class="lrow"><div class="ic ${LIBTYPES[l[0]][2]}"><svg class="i"><use href="#${LIBTYPES[l[0]][1]}"/></svg></div><div class="t"><b>${l[1]}</b><span>${LIBTYPES[l[0]][0]}・${l[2]}・${l[3]}</span></div><span class="f">${l[4]}</span></div>`;
+ const el=document.getElementById('libList');if(libM==='type'){el.innerHTML=rows.map(row).join('');}else{const by={};rows.forEach(l=>{const y=l[3].slice(0,4);(by[y]=by[y]||[]).push(l);});el.innerHTML=Object.keys(by).sort().reverse().map(y=>`<div class="yearh">${y}</div>`+by[y].map(row).join('')).join('');}}
+function libType(t){libT=t;drawLib();}
+function libMode(btn,m){btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===btn));libM=m;drawLib();}
+
+/* ===== stamps / support ===== */
+function ledgerHtml(){return `<div class="stack" style="height:12px"><i style="width:40%;background:var(--g4)" title="動いている 4"></i><i style="width:30%;background:var(--g2)" title="決まった 3"></i><i style="width:20%;background:var(--o1)" title="話し合い中 2"></i><i style="width:10%;background:var(--grey)" title="見送り 1"></i></div><div class="stack-legend" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-top:8px"><div class="l"><i style="background:var(--g4)"></i>動いている<b>4</b></div><div class="l"><i style="background:var(--g2)"></i>決まった<b>3</b></div><div class="l"><i style="background:var(--o1)"></i>話し合い中<b>2</b></div><div class="l"><i style="background:var(--grey)"></i>見送り<b>1</b></div></div><div class="list" style="margin-top:8px">`+LEDGER.map(r=>`<div class="it"><div class="t"><b>${r[0]}</b><span>${r[1]}</span></div><span class="pill ${r[2]}">${r[3]}</span></div>`).join('')+`</div>`;}
+function drawLedger(){const el=document.getElementById('ledger');if(el)el.innerHTML=ledgerHtml();}
+function stanceMode(btn,m){btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===btn));document.getElementById('stanceA').style.display=m==='a'?'':'none';document.getElementById('stanceB').style.display=m==='b'?'':'none';}
+function concern(b){const on=b.classList.toggle('on');const n=b.querySelector('b');n.textContent=parseInt(n.textContent)+(on?1:-1);}
+function stance(b){react(b);const res=b.closest('.card').querySelector('.res');if(res)res.classList.toggle('on',b.classList.contains('on'));}
+function react(b){const was=b.classList.contains('on');b.parentElement.querySelectorAll('button').forEach(x=>{if(x.classList.contains('on')){x.classList.remove('on');x.querySelector('b').textContent=parseInt(x.querySelector('b').textContent)-1;}});if(!was){b.classList.add('on');b.querySelector('b').textContent=parseInt(b.querySelector('b').textContent)+1;}}
+function stamp(el,i){const wrap=el.parentElement;const was=el.classList.contains('on');wrap.querySelectorAll('.stamp').forEach(s=>{if(s.classList.contains('on')){s.classList.remove('on');const c=s.querySelector('.c');c.textContent=parseInt(c.textContent)-1;}});if(!was){el.classList.add('on');const c=el.querySelector('.c');c.textContent=parseInt(c.textContent)+1;}const res=wrap.parentElement.querySelector('.res');if(res)res.classList.toggle('on',!was);const ns=wrap.parentElement.querySelector('.next-step');if(ns)ns.classList.toggle('on',!was);}
+function support(btn){btn.querySelector('b').textContent='賛同しました';btn.querySelector('span').textContent='あと 31 人で陳情の下書きを手伝います';btn.style.background='var(--green)';const card=btn.closest('.card');card.querySelector('.prog i').style.width='69%';}
+
+/* ===== frame switch & scale ===== */
+function setFrame(kind){document.querySelectorAll('.variant-switch button').forEach(b=>b.classList.toggle('on',b.dataset.frame===kind));const f=document.getElementById('frame');f.classList.toggle('phone',kind==='phone');f.classList.toggle('desktop',kind==='desktop');fit();setTimeout(drawTreemap,30);}
+function fit(){const sc=document.getElementById('scaler');const f=document.getElementById('frame');if(!f.classList.contains('desktop')){sc.style.transform='';sc.style.height='';return;}const avail=window.innerWidth-24;const s=Math.max(0.3,Math.min(1,avail/1180));sc.style.transform=`scale(${s})`;sc.style.height=(760*s)+'px';}
+document.querySelectorAll('.variant-switch button').forEach(b=>b.onclick=()=>setFrame(b.dataset.frame));
+window.addEventListener('resize',()=>{fit();drawTreemap();});
+
+/* ===== init ===== */
+setUrl('home');drawLedger();drawTopics();drawGoals();drawForum();drawLib();drawPerPerson();drawDiff();drawStack('revStack','revLegend',REV,OCHRE);drawStack('natStack','natLegend',NAT,['--g6','--g5','--g4','--g3','--g2','--g1','--grey']);drawProj();interest(document.querySelector('#interest .chip'),'kids');
+new ResizeObserver(()=>drawTreemap()).observe(document.getElementById('treemap'));
+document.querySelector('[data-nav="home"]').classList.add('on');
+</script>
+</body>
+</html>

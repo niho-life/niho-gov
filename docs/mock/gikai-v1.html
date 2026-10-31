@@ -1,0 +1,797 @@
+<!doctype html>
+<!--
+  mock: gikai.niho.life v1（スマホ＋PC・切替で見比べ）
+  論点: (1) ホームの「次の議会／最近決まったこと／テーマ／予算」の順と密度 (2) 定例会ページの「暮らしの言葉のトピック → 決まった/これから → 原文・録画」の 3 層
+        (3) テーマページの経緯タイムラインと「ひとこと」（賛否＋100 字・返信なし）の置き方 (4) 予算ページの入口（ツリーマップ→款→事業、ひとりあたり・ひと月、去年から、お金はどこから）
+  実数: 令和7年度 一般会計の款別・前年差・歳入・性質別（hihirohub download-hi/gov の抽出 JSON）、2025年9月定例会のトピック（download-hi/gikai の会議録と article-highlight.md）、
+        市役所の移転の経緯（docs/research/01）。市民ひとりあたりは 809.7億円 ÷ 17.18万人 = 約47.1万円/年。
+  見本（実データではない）: 12月定例会の日程と「次に起きること」の日付、款ごとの「主な事業」の行と金額（放課後かまくらっ子 4.56億円と修繕料の内訳だけ抽出 JSON）、採決の結果の「令和6年度決算」行、
+        ひとことの集計（人数・割合）、「AI に聞く」の答えの文面、関心チップの中身。
+  作っていない: 議員の一覧ページ・テーマの一覧ページ（ホームのテーマ欄だけ）、検索の結果画面、通知の設定、ログイン、PC の右レールの中身の一部（固定）、
+        市役所の移転と学校の暑さ対策以外のテーマページ（カードは開くだけ）、款ページは 8 ブロック共通の雛形、CSV の書き出し、原文・録画の外部リンク（押しても遷移しない）。
+  参照: docs/design/00-concept.md §5〜§8（F1 今回の議会・F2 テーマの経緯・F3 予算・F7 聞く・F9 ひとこと）、docs/research/04-data-sources.md、niho-app docs/design/design-guide.md（Morphoism・骨格は固い名詞）
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>gikai.niho.life モック v1</title>
+<style>
+:root{
+  --font:"Hiragino Maru Gothic ProN","Hiragino Sans","BIZ UDGothic",system-ui,-apple-system,sans-serif;
+  --cream:#FFFCF5; --paper:#FFFFFF; --ink:#1C1C1A; --ink2:#4A4A44; --mute:#8A8A82;
+  --line:rgba(60,45,30,.10); --line2:rgba(60,45,30,.16);
+  --green:#4B9E5E; --green-ink:#2F7A3C; --green-soft:#EAF4E6; --green-soft2:#D9EBD3;
+  --brown:#5D4335; --sand:#F6F0E2;
+  --shadow:0 8px 22px -14px rgba(60,45,30,.45);
+  --g1:#7CC083; --g2:#5FAA68; --g3:#45924F; --g4:#2F7A3C; --g5:#1E6230; --g6:#124A24;
+  --o1:#CF9A30; --o2:#B07F22; --o3:#926716; --o4:#75510D; --o5:#5A3D07;
+  --blue:#3B7DBE; --grey:#C9C6BC;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{font-family:var(--font);background:#1E221E;color:#fff;-webkit-font-smoothing:antialiased;padding:16px 12px 40px}
+button{font-family:var(--font);cursor:pointer;border:0;background:none;color:inherit}
+input,textarea{font-family:var(--font)}
+a{color:inherit;text-decoration:none}
+
+/* ===== stage ===== */
+.stage{display:flex;flex-direction:column;align-items:center;gap:14px}
+.bar{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;width:min(1180px,100%)}
+.bar__title{font-size:13px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:.02em}
+.bar__title span{font-weight:400;color:rgba(255,255,255,.5);margin-left:6px}
+.variant-switch{display:flex;gap:4px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:4px}
+.variant-switch button{font-size:12.5px;font-weight:700;color:rgba(255,255,255,.7);padding:7px 14px;border-radius:999px;transition:background .15s,color .15s}
+.variant-switch button.on{background:#fff;color:#1C1C1A}
+.urlbar{display:flex;align-items:center;gap:8px;width:min(560px,100%);border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);padding:9px 16px;font-size:11.5px;color:rgba(255,255,255,.72);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap;overflow:hidden;justify-content:center}
+.urlbar .lock{font-size:10px;opacity:.6}
+.urlbar .u{overflow:hidden;text-overflow:ellipsis}
+.urlbar .u b{font-weight:400;color:#B3D97D}
+.scaler{transform-origin:top center}
+
+/* ===== frames ===== */
+.frame{position:relative;overflow:hidden;background:var(--cream);color:var(--ink)}
+.frame.phone{width:393px;max-width:100%;height:812px;max-height:calc(100vh - 130px);border-radius:44px;box-shadow:0 30px 90px rgba(0,0,0,.45),0 0 0 10px #101310,0 0 0 11px rgba(255,255,255,.08)}
+.frame.desktop{width:1180px;height:760px;border-radius:16px;box-shadow:0 30px 90px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.12)}
+.app{position:absolute;inset:0;display:flex;flex-direction:column;container-type:inline-size;container-name:app}
+
+/* ===== top bar ===== */
+.topbar{flex:none;display:flex;align-items:center;gap:10px;padding:14px 18px 10px;background:var(--cream)}
+.frame.phone .topbar{padding-top:46px}
+.brand{display:flex;align-items:center;gap:9px}
+.brand svg{width:28px;height:29px;flex:none}
+.brand .t{font-size:17px;font-weight:700;letter-spacing:.01em}
+.brand .s{font-size:11px;color:var(--mute);margin-left:6px;font-weight:600}
+.topnav{display:none;margin-left:28px;gap:4px}
+.topnav button{font-size:14px;font-weight:700;color:var(--ink2);padding:8px 14px;border-radius:999px}
+.topnav button.on{background:var(--ink);color:#fff}
+.topbar .sp{flex:1}
+.topbar .ask-btn{display:none;align-items:center;gap:8px;background:#fff;border:1px solid var(--line2);border-radius:999px;padding:9px 14px;font-size:13px;color:var(--mute);width:300px;text-align:left}
+
+/* ===== screens ===== */
+.screens{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.screens::-webkit-scrollbar{width:0;height:0}
+.screen{display:none;padding:6px 16px 110px}
+.screen.on{display:block}
+.pagehead{display:flex;align-items:flex-start;gap:8px;margin:4px 0 14px}
+.back{width:36px;height:36px;border-radius:999px;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;flex:none;font-size:18px;color:var(--ink2);margin-left:-6px}
+.pagehead h1{font-size:22px;font-weight:700;line-height:1.3;margin-top:4px}
+.pagehead .sub{font-size:13px;color:var(--ink2);margin-top:4px;line-height:1.6}
+h2.sec{font-size:15px;font-weight:700;margin:22px 0 10px;display:flex;align-items:baseline;gap:8px}
+h2.sec:first-child{margin-top:4px}
+h2.sec .more{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--green-ink)}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow)}
+.card+.card{margin-top:10px}
+.card.tap{cursor:pointer;transition:transform .15s,box-shadow .15s}
+.card.tap:hover{transform:translateY(-1px);box-shadow:0 12px 26px -14px rgba(60,45,30,.5)}
+.row{display:flex;align-items:center;gap:10px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:999px;background:var(--sand);color:var(--brown);white-space:nowrap}
+.pill.go{background:var(--green-soft);color:var(--green-ink)}
+.pill.soon{background:#FFF1DB;color:#8A5A12}
+.pill.done{background:#EEF0F4;color:#4A5568}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.chip{display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:999px;background:#fff;border:1px solid var(--line2);color:var(--ink2);white-space:nowrap}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.mute{color:var(--mute)} .small{font-size:12px} .xs{font-size:11.5px}
+.ink2{color:var(--ink2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:700;padding:11px 18px;border-radius:999px;background:var(--green);color:#fff;transition:background .15s}
+.btn:hover{background:var(--green-ink)}
+.btn.sec{background:#fff;color:var(--ink);border:1px solid var(--line2)}
+.btn.sm{font-size:12.5px;padding:7px 12px}
+.ext{color:var(--green-ink);font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
+.ext::after{content:"↗";font-size:11px}
+.hr{height:1px;background:var(--line);margin:12px 0}
+.num{font-variant-numeric:tabular-nums}
+
+/* lists */
+.list{display:flex;flex-direction:column}
+.list .it{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+.list .it:first-child{border-top:0;padding-top:2px}
+.list .it .t{flex:1;min-width:0}
+.list .it .t b{display:block;font-size:14px;font-weight:700;line-height:1.4}
+.list .it .t span{display:block;font-size:12px;color:var(--mute);margin-top:2px}
+.list .it .v{font-weight:700;font-size:14px;white-space:nowrap}
+.list .it .arrow{color:var(--grey);font-size:16px}
+.date{width:46px;flex:none;text-align:center;line-height:1.1}
+.date b{display:block;font-size:17px}
+.date span{font-size:10.5px;color:var(--mute)}
+
+/* hero */
+.hero{background:linear-gradient(160deg,#FFFFFF 0%,#F4F8EE 100%);border:1px solid var(--line);border-radius:24px;padding:18px 18px 16px;box-shadow:var(--shadow)}
+.hero .big{font-size:38px;font-weight:800;letter-spacing:-.01em;line-height:1.05;margin:6px 0 2px}
+.hero .big small{font-size:16px;font-weight:700;margin-left:2px}
+.hero .cap{font-size:12.5px;color:var(--ink2)}
+.stat2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.stat2 .st{background:rgba(255,255,255,.75);border:1px solid var(--line);border-radius:16px;padding:10px 12px}
+.stat2 .st b{display:block;font-size:19px;font-weight:800}
+.stat2 .st span{font-size:11.5px;color:var(--mute)}
+
+/* treemap */
+.treemap{position:relative;width:100%;height:300px;border-radius:18px;overflow:hidden;background:var(--cream)}
+.tile{position:absolute;border:2px solid var(--cream);border-radius:10px;padding:8px 9px;overflow:hidden;cursor:pointer;transition:filter .15s,transform .15s;color:#fff;display:flex;flex-direction:column;justify-content:flex-start}
+.tile:hover{filter:brightness(1.07)}
+.tile .n{font-size:13px;font-weight:700;line-height:1.25;word-break:keep-all}
+.tile .a{font-size:12px;font-weight:700;margin-top:3px;opacity:.95}
+.tile .k{font-size:10.5px;opacity:.75;margin-top:auto}
+.tile.ink{color:var(--ink)}
+.tile.tiny .a,.tile.tiny .k{display:none}
+.tile.tiny .n{font-size:11px}
+.tile.tiny2 .n{display:none}
+.legend-note{font-size:11.5px;color:var(--mute);margin-top:8px}
+
+/* bars */
+.bars{display:flex;flex-direction:column;gap:9px}
+.brow{display:grid;grid-template-columns:7.2em 1fr auto;align-items:center;gap:10px;font-size:13px}
+.brow .n{font-weight:700;line-height:1.25}
+.brow .n small{display:block;font-weight:400;color:var(--mute);font-size:11px}
+.brow .bar{height:10px;border-radius:5px;background:#EFEBE2;position:relative;overflow:hidden}
+.brow .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--g4)}
+.brow .v{font-weight:700;font-size:13px;white-space:nowrap}
+.brow .v small{font-weight:400;color:var(--mute);margin-left:4px;font-size:11px}
+/* diverging */
+.div{display:flex;flex-direction:column;gap:7px}
+.drow{display:grid;grid-template-columns:6.2em 1fr 4.6em;align-items:center;gap:8px;font-size:12.5px}
+.drow .v{font-weight:700;font-size:12.5px;white-space:nowrap}
+.drow .n{font-weight:700;text-align:right;line-height:1.2}
+.drow .trk{position:relative;height:14px}
+.drow .trk::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--line2)}
+.drow .trk i{position:absolute;top:1px;height:12px;border-radius:4px;background:var(--blue)}
+/* stack */
+.stack{display:flex;height:16px;border-radius:8px;overflow:hidden;gap:2px;background:var(--cream)}
+.stack i{display:block;height:100%}
+.stack-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 14px;margin-top:10px;font-size:12px}
+.stack-legend .l{display:flex;align-items:center;gap:7px;min-width:0}
+.stack-legend .l i{width:10px;height:10px;border-radius:3px;flex:none}
+.stack-legend .l b{margin-left:auto;font-weight:700}
+
+/* timeline */
+.tl{position:relative;padding-left:22px}
+.tl::before{content:"";position:absolute;left:7px;top:8px;bottom:8px;width:2px;background:var(--line2);border-radius:1px}
+.tl .ev{position:relative;padding:0 0 18px}
+.tl .ev::before{content:"";position:absolute;left:-19px;top:5px;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid var(--mute)}
+.tl .ev.now::before{background:var(--green);border-color:var(--green);box-shadow:0 0 0 4px var(--green-soft)}
+.tl .ev.next::before{background:#fff;border-style:dashed;border-color:var(--green-ink)}
+.tl .ev .d{font-size:11.5px;font-weight:700;color:var(--mute);letter-spacing:.02em}
+.tl .ev .h{font-size:14px;font-weight:700;line-height:1.45;margin-top:2px}
+.tl .ev .p{font-size:12.5px;color:var(--ink2);line-height:1.6;margin-top:3px}
+.tl .ev .who{margin-top:6px;display:flex;gap:5px;flex-wrap:wrap}
+.who .w{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--sand);color:var(--brown)}
+.who .w.city{background:#E8EEF6;color:#3A4D6B}
+.who .w.ppl{background:var(--green-soft);color:var(--green-ink)}
+
+/* topic cards (session) */
+.tcard .head{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.tcard .no{width:28px;height:28px;border-radius:999px;background:var(--green-soft);color:var(--green-ink);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px}
+.tcard h3{font-size:15.5px;font-weight:700;line-height:1.4}
+.tcard .lead{font-size:13px;color:var(--ink2);line-height:1.6;margin-top:4px}
+.tcard .body{display:none;margin-top:12px}
+.tcard.open .body{display:block}
+.tcard .caret{margin-left:auto;color:var(--grey);font-size:18px;transition:transform .2s;flex:none}
+.tcard.open .caret{transform:rotate(180deg)}
+.qa{border-left:3px solid var(--green-soft2);padding:2px 0 2px 10px;margin:8px 0}
+.qa .q{font-size:13px;font-weight:700}
+.qa .a{font-size:13px;color:var(--ink2);margin-top:3px;line-height:1.6}
+.qa .a b{color:var(--ink)}
+.links{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;align-items:center}
+
+/* vote */
+.vote{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.vote button{border:1.5px solid var(--line2);background:#fff;border-radius:16px;padding:12px 6px;font-size:13.5px;font-weight:700;color:var(--ink2);transition:all .15s}
+.vote button.on{border-color:var(--green);background:var(--green-soft);color:var(--green-ink)}
+.ta{width:100%;border:1.5px solid var(--line2);border-radius:16px;padding:12px;font-size:14px;line-height:1.6;resize:none;margin-top:10px;background:#fff;color:var(--ink)}
+.ta:focus{outline:2px solid var(--green);border-color:transparent}
+.cnt{text-align:right;font-size:11.5px;color:var(--mute);margin-top:4px}
+.res{display:none;margin-top:12px}
+.res.on{display:block}
+.res .st{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px}
+.res .st i{display:block}
+.res .lg{display:flex;justify-content:space-between;font-size:12px;margin-top:6px;color:var(--ink2)}
+.res .lg b{color:var(--ink)}
+.meta-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--mute);margin-top:10px}
+.meta-row .m{display:inline-flex;align-items:center;gap:5px;background:var(--sand);color:var(--brown);padding:4px 9px;border-radius:999px;font-weight:700;font-size:11.5px}
+
+/* search */
+.search{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line2);border-radius:999px;padding:12px 16px;box-shadow:var(--shadow)}
+.search input{flex:1;border:0;outline:0;font-size:14px;background:transparent;color:var(--ink);min-width:0}
+.search input::placeholder{color:var(--mute)}
+.search .ic{color:var(--green-ink);font-weight:800}
+.answer{background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow)}
+.answer .q{font-size:15px;font-weight:700}
+.answer .a{font-size:14px;line-height:1.75;margin-top:10px;color:var(--ink2)}
+.answer .a b{color:var(--ink)}
+.src{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.src a{font-size:12.5px;color:var(--green-ink);font-weight:600;display:flex;gap:6px;align-items:center}
+.src a::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);flex:none}
+
+/* home blocks */
+.next{display:grid;grid-template-columns:1fr;gap:10px}
+.budget-mini{display:flex;align-items:center;gap:14px}
+.budget-mini .mini{flex:1}
+.budget-mini .big{font-size:24px;font-weight:800;line-height:1.1}
+.budget-mini .big small{font-size:13px;font-weight:700;margin-left:2px}
+.mini-stack{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px;margin-top:10px}
+.mini-stack i{display:block}
+.theme-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.theme{background:#fff;border:1px solid var(--line);border-radius:18px;padding:12px 13px;box-shadow:var(--shadow);cursor:pointer;min-height:92px;display:flex;flex-direction:column;gap:6px}
+.theme b{font-size:14px;line-height:1.35}
+.theme .pill{align-self:flex-start;margin-top:auto}
+.theme.off{cursor:default}
+
+/* dock */
+.dock{flex:none;display:flex;justify-content:center;background:linear-gradient(180deg,rgba(252,250,244,.97),rgba(248,244,234,.98));border-top:1px solid rgba(255,255,255,.9);border-radius:22px 22px 0 0;box-shadow:0 -8px 24px -16px rgba(60,45,30,.4);padding:6px 10px 18px}
+.dock .in{display:flex;width:100%;max-width:640px}
+.dock button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 6px;border-radius:14px;font-size:10.5px;font-weight:700;color:var(--mute)}
+.dock button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.dock button.on{color:var(--green-ink)}
+.dock button.on svg{stroke-width:2.2}
+
+/* desktop (container) */
+.rail{display:none}
+@container app (min-width: 860px){
+  .topbar{padding:16px 36px 12px;border-bottom:1px solid var(--line)}
+  .topnav{display:flex}
+  .topbar .ask-btn{display:flex}
+  .dock{display:none}
+  .screen{padding:22px 36px 60px;max-width:1120px;margin:0 auto}
+  .pagehead h1{font-size:28px}
+  .two{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:28px;align-items:start}
+  .rail{display:block;position:sticky;top:0}
+  .treemap{height:420px}
+  .tile .n{font-size:15px}.tile .a{font-size:13.5px}.tile .k{font-size:11.5px}
+  .theme-grid{grid-template-columns:repeat(3,1fr)}
+  .next{grid-template-columns:1fr 1fr}
+  .stat2{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .hero .big{font-size:46px}
+  .budget-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+  .budget-cols .card+.card{margin-top:0}
+  .hide-d{display:none}
+  .home-search{max-width:560px}
+}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="bar">
+    <div class="bar__title">gikai.niho.life <span>モック v1</span></div>
+    <div class="variant-switch">
+      <button data-frame="phone" class="on">スマホ</button>
+      <button data-frame="desktop">PC</button>
+    </div>
+    <div class="urlbar"><span class="lock">🔒</span><span class="u" id="url"></span></div>
+  </div>
+
+  <div class="scaler" id="scaler">
+  <div class="frame phone" id="frame">
+    <div class="app" id="app">
+
+      <div class="topbar">
+        <div class="brand" onclick="go('home')" style="cursor:pointer"><svg aria-hidden="true" viewBox="0 0 462 473" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_1644_5)">
+<path d="M302.558 171.957C298.265 171.411 288.441 164.836 285.967 159.527C282.376 151.836 283.444 136.553 287.422 130.797C292.104 124.023 309.86 116.233 317.064 120.252C324.244 124.272 328.174 127.745 335.087 132.285C343.504 137.818 346.415 150.794 336.979 162.107C322.837 179.052 311.315 173.048 302.558 171.957Z" fill="#4D5E71"/>
+<path d="M358.859 165.134C375.014 160.296 393.231 169.798 401.261 185.304C409.29 200.811 407.713 220.733 399.296 236.066C397.064 240.11 394.347 243.955 390.806 246.809C387.531 249.438 383.698 251.126 379.842 252.639C373.316 255.194 365.821 257.303 359.611 254.028C353.789 250.952 350.806 243.906 349.787 237.108C349.399 234.503 349.229 231.823 348.38 229.317C345.105 219.518 333.608 216.317 326.791 208.849C320.096 201.481 318.592 189.373 323.298 180.367C327.98 171.361 339.187 171.039 358.883 165.159L358.859 165.134Z" fill="#BCD499"/>
+<path d="M354.808 385.596C342.122 396.289 307.701 400.11 297.464 393.238C287.228 386.39 275.318 377.98 274.76 365.128C273.717 341.881 292.419 345.925 298.726 328.806C303.043 317.096 295.96 297.223 315.512 279.632C337.537 259.809 340.763 270.254 356.142 266.93C367.422 264.498 388.574 257.03 397.282 267.773C412.152 286.108 402.207 315.26 377.78 330.964C353.426 346.62 374.917 368.701 354.832 385.596H354.808Z" fill="#A8D5E2"/>
+<path d="M260.182 338.11C251.886 340.665 244.391 331.386 244.391 326.772C244.391 316.947 257.392 309.628 265.349 287.969C266.562 284.669 270.758 268.121 272.966 265.441C275.173 262.737 282.135 254.946 285.579 254.946C296.543 254.946 301.007 262.786 300.061 269.808C298.46 281.617 293.002 295.387 289.727 306.824C288.854 309.851 288.32 316.699 286.913 319.502C282.523 328.384 269.472 335.232 260.182 338.11Z" fill="#4D5E71"/>
+<path d="M224.863 227.134C212.783 225.894 211.522 234.925 183.02 224.355C175.888 221.701 161.455 216.094 161.455 201.208C161.455 165.828 189.812 174.959 216.931 161.884C248.223 146.799 278.374 159.03 295.282 179.548C306.828 193.566 307.75 226.216 288.441 237.108C262.583 251.696 244.342 229.144 224.839 227.134H224.863Z" fill="#FAEBCC"/>
+<path d="M207.131 76.264C232.043 73.6589 262.243 66.2407 266.221 65.5708C281.455 63.065 302.316 69.2179 304.062 87.1308C305.008 96.906 300.812 106.681 294.141 113.777C279.975 128.837 253.074 137.644 228.429 141.986C217.707 143.872 211.497 130.424 201.115 127.125C179.429 120.228 176.591 79.4397 207.107 76.2392L207.131 76.264Z" fill="#A8D5E2"/>
+<path d="M130.867 218.674C116.774 221.651 98.4839 231.699 85.2152 205.252C72.5045 179.896 61.322 180.293 78.2049 148.834C84.9969 136.18 96.8101 124.817 110.904 124.718C118.326 124.669 125.385 127.745 132.177 130.772C135.67 132.31 139.139 133.873 142.632 135.411C147.896 137.743 153.353 140.224 157.089 144.665C164.027 152.902 163.105 165.431 159.442 175.628C155.464 186.669 154.372 213.687 130.843 218.674H130.867Z" fill="#4D5E71"/>
+<path d="M125.506 302.879C131.862 307.866 141.273 305.137 148.648 308.338C155.173 311.141 159.151 318.485 159.369 325.73C159.563 332.974 156.483 339.995 152.116 345.677C143.675 356.693 128.563 363.466 115.925 358.107C109.254 355.254 104.087 349.498 97.465 346.496C93.4384 344.66 88.9993 343.94 84.8999 342.303C74.0327 338.011 65.9793 327.02 65.009 315.136C64.5239 309.231 65.6397 303.326 67.2407 297.645C69.8362 288.39 74.5178 278.714 83.2504 275.117C91.7161 271.619 101.662 275.117 108.672 281.071C115.706 287.026 118.35 297.248 125.482 302.855L125.506 302.879Z" fill="#CFC1AC"/>
+<path d="M216.082 405.171C200.388 409.563 183.554 408.769 168.272 402.939C163.59 401.152 158.908 398.795 155.512 394.826C146.901 384.703 149.958 367.187 158.86 357.362C167.762 347.538 180.643 343.642 193.014 340.963C208.757 337.539 226.028 335.703 240 344.387C246.695 348.555 252.201 355.005 255.549 362.647C259.818 372.397 260.182 384.976 253.972 393.387C247.374 402.318 235.246 399.813 216.082 405.171Z" fill="#F09B84"/>
+<path d="M231.946 316.699C221.2 324.563 211.74 326.871 198.714 329.203C185.688 331.535 169.654 326.871 164.851 314.267C157.622 295.312 143.31 303.053 132.613 283.329C121.139 262.191 124.657 240.408 136.373 229.739C149.763 217.558 168.223 224.554 175.961 230.608C191.34 242.616 193.79 252.837 204.39 248.124C232.334 235.719 250.672 246.213 257.101 264.275C265.008 286.455 241.916 309.405 231.97 316.674L231.946 316.699Z" fill="#BCD499"/>
+<path d="M95.0391 256.733C87.6164 260.653 80.5333 264.349 72.577 266.979C69.7389 267.922 66.5855 268.542 63.7959 267.426C60.8365 266.235 58.9202 263.258 57.6831 260.256C55.9366 255.988 55.2089 251.324 55.5727 246.709C56.0579 240.482 58.9202 234.056 64.3053 231.079C68.1379 228.97 87.4466 226.613 91.7886 226.961C100.594 227.655 118.884 232.468 115.536 247.528C113.256 257.874 102.243 252.887 95.0148 256.733H95.0391Z" fill="#A8D5E2"/>
+<path d="M314.081 255.691C308.89 255.715 304.402 250.753 303.965 245.394C303.529 240.035 306.585 234.776 310.927 231.823C315.269 228.871 320.678 227.978 325.869 228.35C328.077 228.499 330.406 228.945 332.104 230.384C333.292 231.402 334.093 232.841 334.845 234.23C335.936 236.264 337.076 238.398 337.125 240.705C337.173 243.261 335.912 245.692 334.214 247.553C329.726 252.515 322.959 255.591 314.056 255.666L314.081 255.691Z" fill="#CFC1AC"/>
+<path d="M183.166 166.474C175.428 166.722 171.668 164.737 169.242 157.914C167.568 153.2 163.663 141.961 166.719 138.041C171.401 132.062 182.947 136.528 187.241 137.892C194.251 140.125 199.418 143.747 204.196 149.454C205.555 151.091 206.719 153.299 206.04 155.309C205.288 157.467 192.529 166.151 183.19 166.474H183.166Z" fill="#F09B84"/>
+</g>
+<defs>
+<clipPath id="clip0_1644_5">
+<rect width="351" height="342.9" fill="white" transform="translate(55.5 65.0498)"/>
+</clipPath>
+</defs>
+</svg>
+<span class="t">鎌倉の議会</span><span class="s">NIHO</span></div>
+        <nav class="topnav" id="topnav">
+          <button data-nav="home" onclick="go('home')">ホーム</button>
+          <button data-nav="session" onclick="go('session')">議会</button>
+          <button data-nav="topic" onclick="go('topic-cityhall')">テーマ</button>
+          <button data-nav="budget" onclick="go('budget')">予算</button>
+          <button data-nav="member" onclick="go('member')">議員</button>
+        </nav>
+        <div class="sp"></div>
+        <button class="ask-btn" onclick="go('ask')"><span style="color:var(--green-ink);font-weight:800">?</span> 体育館のエアコンはどうなった？</button>
+      </div>
+
+      <main class="screens" id="screens">
+
+        <!-- ================= HOME ================= -->
+        <section class="screen on" data-route="home">
+          <div class="search home-search" onclick="go('ask')" style="cursor:pointer;margin:6px 0 4px">
+            <span class="ic">?</span><input type="text" placeholder="体育館のエアコンはどうなった？" readonly>
+          </div>
+
+          <h2 class="sec">次の議会</h2>
+          <div class="next">
+            <div class="card tap" onclick="go('session')">
+              <div class="row"><span class="pill go"><span class="dot"></span>12月定例会</span><span class="small mute">12月2日（火）〜 19日（金）</span></div>
+              <div style="margin-top:10px;font-size:14px;font-weight:700;line-height:1.5">市役所の移転、補正予算、学校の暑さ対策が議題に</div>
+              <div class="chips" style="margin-top:10px"><span class="chip">市役所の移転</span><span class="chip">補正予算</span><span class="chip">学校の暑さ対策</span></div>
+            </div>
+            <div class="card">
+              <div class="list">
+                <div class="it"><div class="date"><b>11/4</b><span>火</span></div><div class="t"><b>総務常任委員会</b><span>市役所の移転・財政</span></div><span class="ext">録画</span></div>
+                <div class="it"><div class="date"><b>11/14</b><span>金</span></div><div class="t"><b>パブリックコメント締切</b><span>第4次総合計画（素案）</span></div><span class="ext">市のページ</span></div>
+                <div class="it"><div class="date"><b>11/29</b><span>土</span></div><div class="t"><b>議会報告会</b><span>鎌人いち場（鎌倉駅西口）</span></div><span class="arrow">›</span></div>
+              </div>
+            </div>
+          </div>
+
+          <h2 class="sec">最近決まったこと <button class="more" onclick="go('session')">9月定例会 ›</button></h2>
+          <div class="card">
+            <div class="list">
+              <div class="it" onclick="go('session')" style="cursor:pointer"><div class="t"><b>鎌倉高校前踏切の治安対策を求める陳情</b><span>9月30日・本会議</span></div><span class="pill go">採択</span></div>
+              <div class="it" onclick="go('session')" style="cursor:pointer"><div class="t"><b>第2子保育料の年齢制限をなくす陳情</b><span>9月30日・本会議</span></div><span class="pill go">採択</span></div>
+              <div class="it" onclick="go('session')" style="cursor:pointer"><div class="t"><b>令和6年度の決算</b><span>9月30日・本会議</span></div><span class="pill done">認定</span></div>
+            </div>
+          </div>
+
+          <h2 class="sec">テーマ</h2>
+          <div class="theme-grid">
+            <div class="theme" onclick="go('topic-cityhall')"><b>市役所の移転</b><span class="small mute">御成町か、深沢か</span><span class="pill soon"><span class="dot"></span>12月に動き</span></div>
+            <div class="theme" onclick="go('topic-heat')"><b>学校の暑さ対策</b><span class="small mute">体育館のエアコン</span><span class="pill go"><span class="dot"></span>予算化へ</span></div>
+            <div class="theme off"><b>下水道の老朽化</b><span class="small mute">25% が耐用年数超え</span><span class="pill">270〜360億円</span></div>
+            <div class="theme off"><b>観光と暮らし</b><span class="small mute">鎌高前踏切・宿泊税</span><span class="pill go"><span class="dot"></span>陳情を採択</span></div>
+            <div class="theme off"><b>産科と子育て</b><span class="small mute">お産できる病院が1か所に</span><span class="pill">質問 4件</span></div>
+            <div class="theme off"><b>ごみの行き先</b><span class="small mute">逗子市へ委託</span><span class="pill">令和16年度まで</span></div>
+          </div>
+
+          <h2 class="sec">予算 <button class="more" onclick="go('budget')">くわしく ›</button></h2>
+          <div class="card tap" onclick="go('budget')">
+            <div class="budget-mini">
+              <div class="mini">
+                <div class="small mute">2025年度 鎌倉市の予算</div>
+                <div class="big">810<small>億円</small></div>
+                <div class="mini-stack" id="miniStack"></div>
+                <div class="xs mute" style="margin-top:6px">福祉・子育て・医療が 4 割。市民ひとりあたり 月 3.9 万円</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= SESSION ================= -->
+        <section class="screen" data-route="session">
+          <div class="pagehead">
+            <button class="back" onclick="back()">‹</button>
+            <div><h1>9月定例会</h1><div class="sub">2025年9月3日（水）〜 30日（火）・本会議 7日間・一般質問 18人</div></div>
+          </div>
+
+          <div class="two">
+          <div>
+          <h2 class="sec">暮らしに関わる 5 つのトピック</h2>
+
+          <div class="card tcard open" id="t1">
+            <div class="head" onclick="toggle('t1')"><span class="no">1</span><div style="flex:1;min-width:0"><h3>市役所は「2 拠点」に？ 両輪案が登場</h3><div class="lead">御成町に市長室と議会を残し、8 割の機能を深沢へ。条例改正なしで進める案に、議会から異論。</div></div><span class="caret">⌄</span></div>
+            <div class="body">
+              <div class="row" style="gap:6px;flex-wrap:wrap"><span class="pill soon"><span class="dot"></span>まだこれから</span><span class="pill">12月定例会で続き</span></div>
+              <div class="qa"><div class="q">吉岡和江議員・くりはらえりこ議員</div><div class="a">「これまでの議論をないがしろにする進め方ではないか」「住民投票を行うべき」と反発。総務省への見解確認の経緯を追及。</div></div>
+              <div class="qa"><div class="q">市長</div><div class="a">「いつ起こるか分からない災害への備えを早急に講じる必要がある」として<b>両輪案を進める姿勢</b>。</div></div>
+              <div class="links"><span class="ext">会議録 9/5</span><span class="ext">録画</span><button class="btn sm sec" onclick="go('topic-cityhall')">テーマの経緯</button></div>
+            </div>
+          </div>
+
+          <div class="card tcard" id="t2">
+            <div class="head" onclick="toggle('t2')"><span class="no">2</span><div style="flex:1;min-width:0"><h3>避難所が暑すぎる。体育館にエアコンは？</h3><div class="lead">7月の津波警報と9月の台風15号をふり返り、避難所の暑さとペット同行避難が議題に。</div></div><span class="caret">⌄</span></div>
+            <div class="body">
+              <div class="row" style="gap:6px;flex-wrap:wrap"><span class="pill go"><span class="dot"></span>決まった方向</span><span class="pill">2026年度の予算化を目指す</span></div>
+              <div class="qa"><div class="q">細川まなか議員</div><div class="a">「猛暑の影響は子どもたちの生活にも大きく影響している」。体育館にエアコンがあれば休み時間も過ごせる、と設置を要望。</div></div>
+              <div class="qa"><div class="q">市</div><div class="a">「喫緊の課題」と認め、<b>「少なくとも令和8年度の予算化を目指している」</b>と答弁。</div></div>
+              <div class="links"><span class="ext">会議録 9/5</span><span class="ext">録画</span><button class="btn sm sec" onclick="go('topic-heat')">テーマの経緯</button></div>
+            </div>
+          </div>
+
+          <div class="card tcard" id="t3">
+            <div class="head" onclick="toggle('t3')"><span class="no">3</span><div style="flex:1;min-width:0"><h3>下水道管の 25% が耐用年数を超えている</h3><div class="lead">123km が 50 年超。全部直すと 270〜360 億円。八潮市の陥没事故を受けて優先順位を問う声。</div></div><span class="caret">⌄</span></div>
+            <div class="body">
+              <div class="row" style="gap:6px;flex-wrap:wrap"><span class="pill soon"><span class="dot"></span>まだこれから</span></div>
+              <div class="qa"><div class="q">長嶋竜弘議員</div><div class="a">市内の下水管の約 25%、123km が耐用年数の 50 年を超えていることを市が答弁。</div></div>
+              <div class="qa"><div class="q">岡田かずのり議員</div><div class="a">「新庁舎建設よりも、こうしたインフラ維持を優先すべきではないか」。</div></div>
+              <div class="links"><span class="ext">会議録 9/8</span><span class="ext">録画</span></div>
+            </div>
+          </div>
+
+          <div class="card tcard" id="t4">
+            <div class="head" onclick="toggle('t4')"><span class="no">4</span><div style="flex:1;min-width:0"><h3>鎌高前踏切、観光客の増加で治安が悪化</h3><div class="lead">車道への飛び出し、私有地への侵入、ごみの放置。住民からの陳情を議会が全会一致で採択。</div></div><span class="caret">⌄</span></div>
+            <div class="body">
+              <div class="row" style="gap:6px;flex-wrap:wrap"><span class="pill go"><span class="dot"></span>陳情を採択（全会一致）</span></div>
+              <div class="qa"><div class="q">上野学議員・大石香議員</div><div class="a">近隣の生活が脅かされている現状を訴え、警察官の常駐要請や防犯カメラの設置を求めた。</div></div>
+              <div class="qa"><div class="q">市長</div><div class="a">「看過できない状況」として、<b>早急な改善を約束</b>。</div></div>
+              <div class="links"><span class="ext">会議録 9/9</span><span class="ext">録画</span></div>
+            </div>
+          </div>
+
+          <div class="card tcard" id="t5">
+            <div class="head" onclick="toggle('t5')"><span class="no">5</span><div style="flex:1;min-width:0"><h3>お産できる病院が市内 1 か所に。第2子の保育料も</h3><div class="lead">分娩施設の 1 つが令和8年で終了。妊産婦の交通費補助を求める声と、第2子保育料の年齢制限をなくす陳情が採択。</div></div><span class="caret">⌄</span></div>
+            <div class="body">
+              <div class="row" style="gap:6px;flex-wrap:wrap"><span class="pill go"><span class="dot"></span>陳情を採択</span><span class="pill soon"><span class="dot"></span>交通費補助はこれから</span></div>
+              <div class="qa"><div class="q">大石香議員・前川綾子議員</div><div class="a">妊産婦への交通費補助や不安解消のための施策を強く要望。</div></div>
+              <div class="links"><span class="ext">会議録 9/10</span><span class="ext">録画</span></div>
+            </div>
+          </div>
+          </div>
+
+          <aside class="rail">
+            <h2 class="sec">採決の結果</h2>
+            <div class="card">
+              <div class="list">
+                <div class="it"><div class="t"><b>令和6年度 一般会計の決算</b><span>9月30日</span></div><span class="pill done">認定・賛成多数</span></div>
+                <div class="it"><div class="t"><b>鎌高前踏切の治安対策を求める陳情</b><span>9月30日</span></div><span class="pill go">採択・全会一致</span></div>
+                <div class="it"><div class="t"><b>第2子保育料の年齢制限撤廃を求める陳情</b><span>9月30日</span></div><span class="pill go">採択</span></div>
+              </div>
+              <div class="hr"></div>
+              <span class="ext">議案と陳情のすべて（市のページ）</span>
+            </div>
+            <h2 class="sec">日程</h2>
+            <div class="card">
+              <div class="list">
+                <div class="it"><div class="date"><b>9/3</b><span>水</span></div><div class="t"><b>開会・議案の説明</b></div></div>
+                <div class="it"><div class="date"><b>9/4</b><span>木</span></div><div class="t"><b>一般質問</b><span>〜 9/11・18人</span></div></div>
+                <div class="it"><div class="date"><b>9/30</b><span>火</span></div><div class="t"><b>採決・閉会</b></div></div>
+              </div>
+            </div>
+          </aside>
+          </div>
+        </section>
+
+        <!-- ================= TOPIC: CITY HALL ================= -->
+        <section class="screen" data-route="topic-cityhall">
+          <div class="pagehead">
+            <button class="back" onclick="back()">‹</button>
+            <div><h1>市役所の移転</h1><div class="sub">御成町に残すか、深沢へ移すか。8 年ごしの論点。</div></div>
+          </div>
+          <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:14px"><span class="pill soon"><span class="dot"></span>12月定例会で動き</span><span class="pill">市役所</span><span class="pill">防災</span><span class="pill">財政</span></div>
+
+          <div class="two">
+          <div>
+          <h2 class="sec">いまの論点</h2>
+          <div class="card">
+            <div class="list">
+              <div class="it"><div class="t"><b>両輪案で進めてよいか</b><span>市: 災害への備えを急ぐ ／ 議会: 条例改正を避ける手法は強引</span></div></div>
+              <div class="it"><div class="t"><b>住民投票をするか</b><span>2018年に 8,270 筆の直接請求は否決。市長選で両候補の争点に</span></div></div>
+              <div class="it"><div class="t"><b>2 拠点の費用と使い勝手</b><span>二重行政になるのか。深沢の浸水・渋滞の心配</span></div></div>
+            </div>
+          </div>
+
+          <h2 class="sec">経緯</h2>
+          <div class="card">
+            <div class="tl">
+              <div class="ev"><div class="d">2018</div><div class="h">住民投票を求める直接請求（8,270 筆）</div><div class="p">市議会は住民投票条例案を否決。</div><div class="who"><span class="w ppl">市民</span><span class="w">議会</span></div></div>
+              <div class="ev"><div class="d">2022.12</div><div class="h">市役所の位置を変える条例案、16 対 10 で否決</div><div class="p">可決には 3 分の 2（18 人）の賛成が必要だった。</div><div class="who"><span class="w">議会</span></div></div>
+              <div class="ev"><div class="d">2025.8</div><div class="h">市の説明会に延べ 183 人、パブコメ 85 通</div><div class="p">「市民全体に信を問わずに進めている」など反対の声と、早期移転を求める声の両方。</div><div class="who"><span class="w city">市</span><span class="w ppl">市民</span></div></div>
+              <div class="ev now"><div class="d">2025.9</div><div class="h">9月定例会で市長が「両輪案」を表明</div><div class="p">現在地に市長室と議会、深沢に約 8 割の機能。条例改正を行わずに進める案。議員から「住民投票を」の声。</div><div class="who"><span class="w city">市</span><span class="w">議会</span></div><div class="links" style="margin-top:8px"><button class="btn sm sec" onclick="go('session')">9月定例会のまとめ</button><span class="ext">会議録 9/5</span></div></div>
+              <div class="ev"><div class="d">2025.10</div><div class="h">市長選。両輪案を進める現職が 52.7%、撤回と住民投票を掲げた候補が 41.5%</div><div class="p">投票率 40.9%。</div><div class="who"><span class="w ppl">市民</span></div></div>
+              <div class="ev"><div class="d">2025.12</div><div class="h">市が「両輪体制」の方針を策定</div><div class="who"><span class="w city">市</span></div></div>
+              <div class="ev next"><div class="d">次</div><div class="h">12月定例会（12/2〜）で質疑</div><div class="p">総務常任委員会は 11/4。</div></div>
+            </div>
+          </div>
+          </div>
+
+          <aside class="rail">
+          <h2 class="sec">関連</h2>
+          <div class="card">
+            <div class="list">
+              <div class="it" onclick="goKan('somu')" style="cursor:pointer"><div class="t"><b>本庁舎等整備事業</b><span>2025年度予算・市役所の運営（総務費）</span></div><span class="v num">3.3億円</span><span class="arrow">›</span></div>
+              <div class="it"><div class="t"><b>市役所の位置を変える条例案</b><span>2022年12月定例会</span></div><span class="pill done">否決</span></div>
+              <div class="it"><div class="t"><b>住民投票条例案</b><span>2018年・直接請求</span></div><span class="pill done">否決</span></div>
+            </div>
+          </div>
+          <h2 class="sec">発言した議員</h2>
+          <div class="chips"><span class="chip">吉岡和江</span><span class="chip">くりはらえりこ</span><span class="chip">岡田かずのり</span><span class="chip">長嶋竜弘</span><span class="chip">＋6人</span></div>
+
+          <h2 class="sec">ひとこと</h2>
+          <div class="card">
+            <div style="font-size:14px;font-weight:700;line-height:1.5">両輪案（2 拠点）で進めることに</div>
+            <div class="vote" style="margin-top:12px">
+              <button onclick="vote(this,'y')">賛成</button><button onclick="vote(this,'n')">反対</button><button onclick="vote(this,'u')">わからない</button>
+            </div>
+            <textarea class="ta" rows="3" maxlength="100" placeholder="理由をひとこと（100字まで）" oninput="this.nextElementSibling.textContent=this.value.length+' / 100'"></textarea>
+            <div class="cnt">0 / 100</div>
+            <div class="row" style="margin-top:10px;gap:10px"><button class="btn" onclick="sendVote(this)">送る</button><span class="xs mute">ニックネームで表示・返信はありません</span></div>
+            <div class="res" id="voteRes">
+              <div class="st"><i style="width:38%;background:var(--g4)"></i><i style="width:44%;background:var(--o2)"></i><i style="width:18%;background:var(--grey)"></i></div>
+              <div class="lg"><span>賛成 <b>38%</b></span><span>反対 <b>44%</b></span><span>わからない <b>18%</b></span></div>
+              <div class="xs mute" style="margin-top:6px">213 人（あなたを含む）</div>
+            </div>
+            <div class="meta-row"><span class="m">届け先　市議会の各会派</span><span class="m">11/28 まで</span></div>
+          </div>
+          </aside>
+          </div>
+        </section>
+
+        <!-- ================= TOPIC: SCHOOL HEAT ================= -->
+        <section class="screen" data-route="topic-heat">
+          <div class="pagehead">
+            <button class="back" onclick="back()">‹</button>
+            <div><h1>学校の暑さ対策</h1><div class="sub">体育館にエアコンを。避難所としての備えも。</div></div>
+          </div>
+          <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:14px"><span class="pill go"><span class="dot"></span>2026年度の予算化を目指す（市の答弁）</span><span class="pill">学校</span><span class="pill">防災</span></div>
+
+          <div class="two">
+          <div>
+          <h2 class="sec">経緯</h2>
+          <div class="card">
+            <div class="tl">
+              <div class="ev"><div class="d">2025.7.30</div><div class="h">津波警報で多くの人が学校や市役所へ避難</div><div class="p">体育館の暑さが課題に。ペットを連れた避難でもトラブル。</div><div class="who"><span class="w ppl">市民</span></div></div>
+              <div class="ev now"><div class="d">2025.9.5</div><div class="h">9月定例会で細川まなか議員が体育館のエアコン設置を質問</div><div class="p">市は「喫緊の課題」と認め、「少なくとも令和8年度の予算化を目指している」と答弁。</div><div class="who"><span class="w">議会</span><span class="w city">市</span></div><div class="links" style="margin-top:8px"><button class="btn sm sec" onclick="go('member')">細川まなか議員</button><span class="ext">会議録 9/5</span><span class="ext">録画</span></div></div>
+              <div class="ev next"><div class="d">次</div><div class="h">2026年2月定例会で 2026年度予算案</div><div class="p">教育費（2025年度 78.6億円）の中に入るかを確認。</div></div>
+            </div>
+          </div>
+          </div>
+          <aside class="rail">
+          <h2 class="sec">関連</h2>
+          <div class="card">
+            <div class="list">
+              <div class="it" onclick="goKan('kyoiku')" style="cursor:pointer"><div class="t"><b>学校・教育（教育費）</b><span>2025年度予算</span></div><span class="v num">78.6億円</span><span class="arrow">›</span></div>
+              <div class="it"><div class="t"><b>防災（津波・台風・避難所）</b><span>テーマ</span></div><span class="arrow">›</span></div>
+            </div>
+          </div>
+          <h2 class="sec">ひとこと</h2>
+          <div class="card">
+            <div style="font-size:14px;font-weight:700;line-height:1.5">体育館のエアコンを 2026年度に予算化することに</div>
+            <div class="vote" style="margin-top:12px"><button onclick="vote(this,'y')">賛成</button><button onclick="vote(this,'n')">反対</button><button onclick="vote(this,'u')">わからない</button></div>
+            <textarea class="ta" rows="3" maxlength="100" placeholder="理由をひとこと（100字まで）" oninput="this.nextElementSibling.textContent=this.value.length+' / 100'"></textarea>
+            <div class="cnt">0 / 100</div>
+            <div class="row" style="margin-top:10px;gap:10px"><button class="btn" onclick="sendVote(this)">送る</button><span class="xs mute">ニックネームで表示・返信はありません</span></div>
+            <div class="res"><div class="st"><i style="width:81%;background:var(--g4)"></i><i style="width:7%;background:var(--o2)"></i><i style="width:12%;background:var(--grey)"></i></div><div class="lg"><span>賛成 <b>81%</b></span><span>反対 <b>7%</b></span><span>わからない <b>12%</b></span></div><div class="xs mute" style="margin-top:6px">96 人（あなたを含む）</div></div>
+            <div class="meta-row"><span class="m">届け先　市教育委員会・各会派</span><span class="m">1/31 まで</span></div>
+          </div>
+          </aside>
+          </div>
+        </section>
+
+        <!-- ================= BUDGET ================= -->
+        <section class="screen" data-route="budget">
+          <div class="pagehead">
+            <button class="back" onclick="back()">‹</button>
+            <div><h1>2025年度の予算</h1><div class="sub">鎌倉市 一般会計・当初予算</div></div>
+          </div>
+          <div class="hero">
+            <div class="cap">1 年間に使うお金</div>
+            <div class="big">810<small>億円</small></div>
+            <div class="stat2">
+              <div class="st"><b class="num">+65億円</b><span>去年より（+8.8%）</span></div>
+              <div class="st"><b class="num">47万円</b><span>市民ひとりあたり・1 年</span></div>
+              <div class="st"><b class="num">3.9万円</b><span>市民ひとりあたり・ひと月</span></div>
+              <div class="st"><b class="num">386億円</b><span>市税（お金の 48%）</span></div>
+            </div>
+          </div>
+
+          <h2 class="sec">何に使う？ <span class="xs mute" style="font-weight:400">ブロックを押すと内訳</span></h2>
+          <div class="card" style="padding:10px">
+            <div class="treemap" id="treemap"></div>
+          </div>
+
+          <div class="budget-cols">
+          <div>
+          <h2 class="sec">ひとりあたり、ひと月に</h2>
+          <div class="card"><div class="bars" id="perPerson"></div></div>
+          </div>
+          <div>
+          <h2 class="sec">去年から変わったこと</h2>
+          <div class="card"><div class="div" id="diffBars"></div></div>
+          </div>
+          </div>
+
+          <div class="budget-cols">
+          <div>
+          <h2 class="sec">お金はどこから</h2>
+          <div class="card">
+            <div class="stack" id="revStack"></div>
+            <div class="stack-legend" id="revLegend"></div>
+          </div>
+          </div>
+          <div>
+          <h2 class="sec">どんな形で払う？</h2>
+          <div class="card">
+            <div class="stack" id="natStack"></div>
+            <div class="stack-legend" id="natLegend"></div>
+          </div>
+          </div>
+          </div>
+
+          <h2 class="sec">あなたの関心から</h2>
+          <div class="chips" id="interest">
+            <button class="chip on" onclick="interest(this,'kids')">子育て</button><button class="chip" onclick="interest(this,'bosai')">防災</button><button class="chip" onclick="interest(this,'kanko')">観光</button><button class="chip" onclick="interest(this,'gomi')">ごみ</button><button class="chip" onclick="interest(this,'school')">学校</button>
+          </div>
+          <div class="card" style="margin-top:10px">
+            <div class="list" id="interestList"></div>
+          </div>
+          <div class="row" style="margin-top:14px;gap:10px;flex-wrap:wrap"><button class="btn sec sm">事業を検索</button><button class="btn sec sm">CSV で書き出す</button><span class="ext">市の予算書（PDF）</span></div>
+        </section>
+
+        <!-- ================= BUDGET: KAN ================= -->
+        <section class="screen" data-route="kan">
+          <div class="pagehead">
+            <button class="back" onclick="back()">‹</button>
+            <div><h1 id="kanTitle">福祉・子育て・医療</h1><div class="sub" id="kanSub">民生費</div></div>
+          </div>
+          <div class="hero" style="padding:16px 18px">
+            <div class="row" style="align-items:baseline;gap:10px"><div class="big num" id="kanAmt" style="margin:0">331<small>億円</small></div><span class="pill" id="kanShare">予算の 40.9%</span></div>
+            <div class="stat2" style="grid-template-columns:1fr 1fr">
+              <div class="st"><b class="num" id="kanDiff">+25.9億円</b><span>去年より</span></div>
+              <div class="st"><b class="num" id="kanPer">1.6万円</b><span>ひとりあたり・ひと月</span></div>
+            </div>
+          </div>
+          <h2 class="sec">主な事業 <span class="xs mute" style="font-weight:400" id="kanCount"></span></h2>
+          <div class="card"><div class="list" id="kanList"></div></div>
+          <h2 class="sec">この分野が話題になった議会</h2>
+          <div class="card">
+            <div class="list" id="kanTopics"></div>
+          </div>
+        </section>
+
+        <!-- ================= BUDGET: PROJECT ================= -->
+        <section class="screen" data-route="project">
+          <div class="pagehead">
+            <button class="back" onclick="back()">‹</button>
+            <div><h1>放課後かまくらっ子</h1><div class="sub">放課後子ども総合プラン等管理運営事業・青少年課</div></div>
+          </div>
+          <div class="hero" style="padding:16px 18px">
+            <div class="row" style="align-items:baseline;gap:10px"><div class="big num" style="margin:0">4.56<small>億円</small></div><span class="pill">福祉・子育て・医療</span></div>
+            <div class="cap" style="margin-top:8px">市内の小学生が放課後を過ごせる場所を、16 の「子どもの家」で運営する。全ての児童が対象。</div>
+          </div>
+          <h2 class="sec">内訳</h2>
+          <div class="card"><div class="bars" id="projBars"></div></div>
+          <h2 class="sec">お金の出どころ</h2>
+          <div class="card">
+            <div class="stack"><i style="width:34%;background:var(--o2)"></i><i style="width:17%;background:var(--o3)"></i><i style="width:49%;background:var(--o1)"></i></div>
+            <div class="stack-legend" style="grid-template-columns:1fr 1fr 1fr"><div class="l"><i style="background:var(--o2)"></i>国<b>34%</b></div><div class="l"><i style="background:var(--o3)"></i>県<b>17%</b></div><div class="l"><i style="background:var(--o1)"></i>市<b>49%</b></div></div>
+          </div>
+          <h2 class="sec">去年から</h2>
+          <div class="card"><div class="list"><div class="it"><div class="t"><b>2024年度</b></div><span class="v num">4.31億円</span></div><div class="it"><div class="t"><b>2025年度</b><span>エアコンの取替（2 か所）と各所の修繕を追加</span></div><span class="v num">4.56億円</span></div></div></div>
+          <div class="row" style="margin-top:14px;gap:14px"><span class="ext">予算書 p.48（PDF）</span><span class="ext">事業のページ（市）</span></div>
+        </section>
+
+        <!-- ================= MEMBER ================= -->
+        <section class="screen" data-route="member">
+          <div class="pagehead">
+            <button class="back" onclick="back()">‹</button>
+            <div><h1>細川まなか 議員</h1><div class="sub">議席 1 番</div></div>
+          </div>
+          <h2 class="sec">質問したテーマ</h2>
+          <div class="chips"><span class="chip on" onclick="go('topic-heat')">学校の暑さ対策</span><span class="chip">防災</span><span class="chip">子育て</span></div>
+          <h2 class="sec">9月定例会での質問</h2>
+          <div class="card">
+            <div class="qa" style="margin:0"><div class="q">体育館のエアコン設置について</div><div class="a">「猛暑の影響は子どもたちの生活にも大きく影響している」「体育館にエアコンが設置されていれば、高温の日にも休み時間に体育館で過ごすことができる」</div></div>
+            <div class="qa"><div class="q">市の答弁</div><div class="a">「喫緊の課題」。<b>「少なくとも令和8年度の予算化を目指している」</b></div></div>
+            <div class="links"><span class="ext">会議録 9/5</span><span class="ext">録画</span><button class="btn sm sec" onclick="go('topic-heat')">テーマの経緯</button></div>
+          </div>
+          <h2 class="sec">発言した議会</h2>
+          <div class="card"><div class="list"><div class="it" onclick="go('session')" style="cursor:pointer"><div class="t"><b>9月定例会</b><span>一般質問 9/5</span></div><span class="arrow">›</span></div><div class="it"><div class="t"><b>6月定例会</b><span>一般質問 6/10</span></div><span class="arrow">›</span></div></div></div>
+        </section>
+
+        <!-- ================= ASK ================= -->
+        <section class="screen" data-route="ask">
+          <div class="pagehead">
+            <button class="back" onclick="back()">‹</button>
+            <div><h1>聞く</h1></div>
+          </div>
+          <div class="search"><span class="ic">?</span><input type="text" value="体育館のエアコンはどうなった？"></div>
+          <div class="answer" style="margin-top:12px">
+            <div class="q">体育館のエアコンはどうなった？</div>
+            <div class="a">9月定例会で細川まなか議員が設置を求め、市は「喫緊の課題」として<b>「少なくとも令和8年度（2026年度）の予算化を目指している」</b>と答えました。設置が決まったわけではなく、<b>2026年2月定例会の予算案</b>で中身が分かります。</div>
+            <div class="src"><a onclick="go('topic-heat')">テーマ: 学校の暑さ対策</a><a onclick="go('session')">9月定例会のまとめ</a><a>会議録 2025年9月5日（原文）</a></div>
+            <div class="meta-row"><span class="m">会議録から AI が作成・NIHO が確認</span></div>
+          </div>
+          <h2 class="sec">よく聞かれていること</h2>
+          <div class="chips"><span class="chip">市役所はどこに移るの？</span><span class="chip">下水道料金は上がるの？</span><span class="chip">保育料はいつから無料？</span></div>
+        </section>
+
+      </main>
+
+      <nav class="dock" id="dock">
+        <div class="in">
+          <button data-nav="home" onclick="go('home')"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>ホーム</button>
+          <button data-nav="session" onclick="go('session')"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>議会</button>
+          <button data-nav="topic" onclick="go('topic-cityhall')"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18" cy="16" r="3"/></svg>テーマ</button>
+          <button data-nav="budget" onclick="go('budget')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="12" rx="1.5"/><rect x="13" y="3" width="8" height="7" rx="1.5"/><rect x="13" y="12" width="8" height="9" rx="1.5"/><rect x="3" y="17" width="8" height="4" rx="1.5"/></svg>予算</button>
+        </div>
+      </nav>
+
+    </div>
+  </div>
+  </div>
+</div>
+
+<script>
+/* ===== data (令和7年度 一般会計・億円) ===== */
+const POP=171800;
+const KAN=[
+ {key:'minsei',jp:'福祉・子育て・医療',kan:'民生費',amt:331.3,share:40.9,diff:25.9,projects:[['生活を支える給付（生活保護）','生活福祉課',52.1],['後期高齢者医療への繰出','保険年金課',25.4],['保育所の運営','保育課',24.8],['障害福祉サービス','障害福祉課',21.6],['国民健康保険への繰出','保険年金課',13.3],['児童手当','こども支援課',12.9],['放課後かまくらっ子','青少年課',4.56]],topics:[['産科と子育て','9月定例会・質問 4件'],['第2子保育料の年齢制限','9月定例会・陳情を採択']]},
+ {key:'doboku',jp:'道路・まちづくり',kan:'土木費',amt:122.9,share:15.2,diff:17.9,projects:[['下水道事業への繰出','都市整備総務課',32.9],['深沢地域の整備','深沢地域整備課',5.4],['道路の維持補修','道路課',3.2],['公園の維持管理','みどり公園課',1.6]],topics:[['下水道の老朽化','9月定例会・質問 2件'],['市役所の移転','9月定例会・質問 6件']]},
+ {key:'somu',jp:'市役所の運営',kan:'総務費',amt:101.3,share:12.5,diff:21.1,projects:[['職員の給与','職員課',14.2],['本庁舎等整備事業','公的不動産活用課',3.3],['庁舎の管理','公的不動産活用課',2.7],['鎌倉芸術館の運営','文化課',1.4]],topics:[['市役所の移転','9月定例会・質問 6件']]},
+ {key:'eisei',jp:'ごみ・健康',kan:'衛生費',amt:87.2,share:10.8,diff:18.1,projects:[['ごみ処理の計画と施設','ごみ減量対策課',20.3],['ごみの収集','ごみ減量対策課',8.9],['ごみの資源化','ごみ減量対策課',6.3],['予防接種','市民健康課',3.7],['母子保健','こども家庭相談課',1.9]],topics:[['ごみの行き先','6月定例会・質問 3件']]},
+ {key:'kyoiku',jp:'学校・教育',kan:'教育費',amt:78.6,share:9.7,diff:-8.6,projects:[['小学校の施設管理','学校施設課',3.8],['学校給食','学務課',3.1],['生涯学習センターの運営','生涯学習課',3.1],['史跡の環境整備','文化財課',2.1]],topics:[['学校の暑さ対策','9月定例会・質問 1件']]},
+ {key:'kosai',jp:'借金の返済',kan:'公債費',amt:36.8,share:4.5,diff:-4.4,projects:[['市債の元金の返済','財政課',32.4],['市債の利子','財政課',4.4]],topics:[]},
+ {key:'shobo',jp:'消防・救急',kan:'消防費',amt:30.8,share:3.8,diff:-5.5,projects:[['消防署の運営','消防総務課',18.9],['救急','警防救急課',4.1],['消防団','消防総務課',1.3]],topics:[['防災（津波・台風・避難所）','9月定例会・質問 5件']]},
+ {key:'other',jp:'そのほか',kan:'農林水産・商工・観光・議会など 7 つ',amt:20.7,share:2.6,diff:0.8,projects:[['農業・漁業','農水産課',5.9],['商業・産業','商工課',4.8],['市議会','議会総務課',4.4],['観光','観光課',4.1],['働く支援','商工課',0.9]],topics:[['観光と暮らし','9月定例会・陳情を採択']]}
+];
+const REV=[['市税',385.9,47.7],['国から',139.4,17.2],['県から',56.0,6.9],['貯金から',54.5,6.7],['消費税の配分',43.2,5.3],['借金（市債）',42.4,5.2],['寄附',30.1,3.7],['そのほか',58.2,7.3]];
+const NAT=[['給付（扶助費）',204.5,25.3],['委託・物件費',201.7,24.9],['人件費',143.7,17.7],['建設事業',77.6,9.6],['借金の返済',37.3,4.6],['補助金など',30.6,3.8],['そのほか',114.3,14.1]];
+const PROJ=[['指定管理料（16 施設）',3.30],['各所の修繕',1.03],['省エネ改修の修繕',0.65],['エアコンの取替（2 か所）',0.69],['消耗品など',0.12]];
+const INTEREST={
+ kids:[['放課後かまくらっ子','福祉・子育て・医療',4.56,'project'],['保育所の運営','福祉・子育て・医療',24.8],['児童手当','福祉・子育て・医療',12.9],['母子保健','ごみ・健康',1.9],['学校給食','学校・教育',3.1]],
+ bosai:[['消防署の運営','消防・救急',18.9],['避難所の備蓄','市役所の運営',0.8],['津波避難路の整備','道路・まちづくり',0.6]],
+ kanko:[['観光','そのほか',4.1],['鎌高前踏切の安全対策','道路・まちづくり',0.3]],
+ gomi:[['ごみ処理の計画と施設','ごみ・健康',20.3],['ごみの収集','ごみ・健康',8.9],['ごみの資源化','ごみ・健康',6.3]],
+ school:[['小学校の施設管理','学校・教育',3.8],['学校給食','学校・教育',3.1],['体育館の空調（検討）','学校・教育',0]]
+};
+const URLS={home:'gikai.niho.life/',session:'gikai.niho.life/sessions/2025-09','topic-cityhall':'gikai.niho.life/topics/city-hall','topic-heat':'gikai.niho.life/topics/school-heat',budget:'gikai.niho.life/budget/2025',kan:'gikai.niho.life/budget/2025/',project:'gikai.niho.life/budget/2025/p/houkago-kamakurakko',member:'gikai.niho.life/members/hosokawa-manaka',ask:'gikai.niho.life/ask?q=体育館のエアコン'};
+const GREENS=['--g6','--g5','--g4','--g3','--g2','--g1','--g1','--g1'];
+const OCHRE=['--o5','--o4','--o3','--o2','--o1','--o1','--o1','--grey'];
+const NAV={home:'home',session:'session','topic-cityhall':'topic','topic-heat':'topic',budget:'budget',kan:'budget',project:'budget',member:'member',ask:'home'};
+
+/* ===== routing ===== */
+const hist=[];let cur='home';let curKan='minsei';
+function setUrl(route){let u=URLS[route]||'gikai.niho.life/';if(route==='kan')u+=curKan;const i=u.indexOf('/');document.getElementById('url').innerHTML=u.slice(0,i)+'<b>'+u.slice(i)+'</b>';}
+function go(route,opts){if(route!==cur)hist.push(cur);cur=route;document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.dataset.route===route));setUrl(route);if(route==='budget'){drawTreemap();requestAnimationFrame(drawTreemap);}document.getElementById('screens').scrollTop=0;const n=NAV[route];document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('on',b.dataset.nav===n));}
+function back(){const p=hist.pop()||'home';const keep=cur;cur=p;document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.dataset.route===p));setUrl(p);document.getElementById('screens').scrollTop=0;const n=NAV[p];document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('on',b.dataset.nav===n));}
+function toggle(id){document.getElementById(id).classList.toggle('open');}
+function yen(x){return x.toLocaleString('ja-JP');}
+function perMonth(amt){return Math.round(amt*1e8/POP/12);}
+function goKan(key){curKan=key;const k=KAN.find(x=>x.key===key);document.getElementById('kanTitle').textContent=k.jp;document.getElementById('kanSub').textContent=k.kan;document.getElementById('kanAmt').innerHTML=(k.amt>=100?Math.round(k.amt):k.amt.toFixed(1))+'<small>億円</small>';document.getElementById('kanShare').textContent='予算の '+k.share+'%';document.getElementById('kanDiff').textContent=(k.diff>=0?'+':'−')+Math.abs(k.diff).toFixed(1)+'億円';const pm=perMonth(k.amt);document.getElementById('kanPer').textContent=(pm>=10000?(pm/10000).toFixed(1)+'万円':yen(pm)+'円');document.getElementById('kanCount').textContent='金額の大きい順';
+ const l=document.getElementById('kanList');l.innerHTML=k.projects.map(p=>`<div class="it" ${p[0]==='放課後かまくらっ子'?'onclick="go(\'project\')" style="cursor:pointer"':''}><div class="t"><b>${p[0]}</b><span>${p[1]}</span></div><span class="v num">${p[2]>=10?Math.round(p[2]):p[2].toFixed(p[2]<1?2:1)}億円</span><span class="arrow">›</span></div>`).join('')+`<div class="it"><div class="t"><span>ほか ${Math.max(0,54-k.projects.length)} 事業</span></div><button class="btn sm sec">すべて見る</button></div>`;
+ const t=document.getElementById('kanTopics');t.innerHTML=k.topics.length?k.topics.map(x=>`<div class="it" onclick="go('session')" style="cursor:pointer"><div class="t"><b>${x[0]}</b><span>${x[1]}</span></div><span class="arrow">›</span></div>`).join(''):'<div class="it"><div class="t"><span>直近 1 年の議会で質問はありません</span></div></div>';
+ go('kan');}
+
+/* ===== treemap (squarify) ===== */
+function squarify(items,W,H){const total=items.reduce((a,b)=>a+b.v,0);const scale=W*H/total;const data=items.map(it=>({...it,a:it.v*scale}));const rects=[];let x=0,y=0,w=W,h=H;let row=[];let i=0;
+ const worst=(r,len)=>{const s=r.reduce((a,b)=>a+b.a,0);const mx=Math.max(...r.map(q=>q.a)),mn=Math.min(...r.map(q=>q.a));return Math.max(len*len*mx/(s*s),s*s/(len*len*mn));};
+ function layout(r){const s=r.reduce((a,b)=>a+b.a,0);if(w>=h){const cw=s/h;let cy=y;r.forEach(q=>{const rh=q.a/cw;rects.push({...q,x,y:cy,w:cw,h:rh});cy+=rh;});x+=cw;w-=cw;}else{const rh=s/w;let cx=x;r.forEach(q=>{const rw=q.a/rh;rects.push({...q,x:cx,y,w:rw,h:rh});cx+=rw;});y+=rh;h-=rh;}}
+ while(i<data.length){const len=Math.min(w,h);const it=data[i];if(row.length===0||worst(row.concat([it]),len)<=worst(row,len)){row.push(it);i++;}else{layout(row);row=[];}}
+ if(row.length)layout(row);return rects;}
+function drawTreemap(){const el=document.getElementById('treemap');const W=el.clientWidth,H=el.clientHeight;if(!W)return;const items=KAN.map(k=>({key:k.key,jp:k.jp,kan:k.kan,amt:k.amt,v:k.amt}));const rects=squarify(items,W,H);el.innerHTML='';rects.forEach((r,idx)=>{const d=document.createElement('div');const rank=KAN.findIndex(k=>k.key===r.key);d.className='tile'+(rank>=4?' ink':'')+((r.w<78||r.h<44)?' tiny':'')+((r.w<46||r.h<28)?' tiny2':'');d.style.cssText=`left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;background:var(${GREENS[rank]})`;d.innerHTML=`<div class="n">${r.jp}</div><div class="a num">${r.amt>=100?Math.round(r.amt):r.amt.toFixed(1)}億円</div><div class="k">${r.kan}</div>`;d.title=`${r.jp}（${r.kan}）${r.amt}億円`;d.onclick=()=>goKan(r.key);el.appendChild(d);});}
+
+/* ===== bars ===== */
+function drawPerPerson(){const el=document.getElementById('perPerson');const max=perMonth(KAN[0].amt);el.innerHTML=KAN.map((k,i)=>{const pm=perMonth(k.amt);return `<div class="brow"><div class="n">${k.jp}<small>${k.kan}</small></div><div class="bar"><i style="width:${Math.max(2,pm/max*100)}%;background:var(${GREENS[i]})"></i></div><div class="v num">${pm>=10000?(pm/10000).toFixed(1)+'万円':yen(pm)+'円'}</div></div>`;}).join('')+`<div class="xs mute" style="margin-top:4px">合計 3.9万円（47万円 ÷ 12 か月）</div>`;}
+function drawDiff(){const el=document.getElementById('diffBars');const rows=[...KAN].filter(k=>k.key!=='other').sort((a,b)=>b.diff-a.diff);const max=Math.max(...rows.map(r=>Math.abs(r.diff)));el.innerHTML=rows.map(r=>{const pct=Math.abs(r.diff)/max*48;const pos=r.diff>=0;return `<div class="drow"><div class="n">${r.jp}</div><div class="trk"><i style="${pos?'left:50%':'right:50%'};width:${pct}%"></i></div><div class="v num">${pos?'+':'−'}${Math.abs(r.diff).toFixed(1)}億</div></div>`;}).join('');}
+function drawStack(stackId,legendId,rows,ramp){const s=document.getElementById(stackId),l=document.getElementById(legendId);s.innerHTML=rows.map((r,i)=>`<i style="width:${r[2]}%;background:var(${ramp[i]})" title="${r[0]} ${r[1]}億円（${r[2]}%）"></i>`).join('');l.innerHTML=rows.map((r,i)=>`<div class="l"><i style="background:var(${ramp[i]})"></i>${r[0]}<b class="num">${Math.round(r[1])}億円</b></div>`).join('');}
+function drawProj(){const el=document.getElementById('projBars');const max=PROJ[0][1];el.innerHTML=PROJ.map((p,i)=>`<div class="brow" style="grid-template-columns:9em 1fr auto"><div class="n">${p[0]}</div><div class="bar"><i style="width:${p[1]/max*100}%;background:var(${GREENS[Math.min(i,5)]})"></i></div><div class="v num">${p[1].toFixed(2)}億円</div></div>`).join('');}
+function drawMini(){const el=document.getElementById('miniStack');el.innerHTML=KAN.map((k,i)=>`<i style="width:${k.share}%;background:var(${GREENS[i]})" title="${k.jp} ${k.share}%"></i>`).join('');}
+function interest(btn,key){document.querySelectorAll('#interest .chip').forEach(c=>c.classList.toggle('on',c===btn));const el=document.getElementById('interestList');el.innerHTML=INTEREST[key].map(r=>`<div class="it" ${r[3]?'onclick="go(\'project\')" style="cursor:pointer"':''}><div class="t"><b>${r[0]}</b><span>${r[1]}</span></div><span class="v num">${r[2]?(r[2]>=10?Math.round(r[2]):r[2].toFixed(r[2]<1?2:1))+'億円':'—'}</span><span class="arrow">›</span></div>`).join('');}
+
+/* ===== vote ===== */
+function vote(btn,v){btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===btn));}
+function sendVote(btn){const card=btn.closest('.card');const res=card.querySelector('.res');res.classList.add('on');btn.textContent='送りました';btn.classList.add('sec');}
+
+/* ===== frame switch & scale ===== */
+function setFrame(kind){document.querySelectorAll('.variant-switch button').forEach(b=>b.classList.toggle('on',b.dataset.frame===kind));const f=document.getElementById('frame');f.classList.toggle('phone',kind==='phone');f.classList.toggle('desktop',kind==='desktop');fit();setTimeout(drawTreemap,30);}
+function fit(){const sc=document.getElementById('scaler');const f=document.getElementById('frame');const isD=f.classList.contains('desktop');if(!isD){sc.style.transform='';sc.style.height='';return;}const avail=window.innerWidth-24;const s=Math.max(0.3,Math.min(1,avail/1180));sc.style.transform=`scale(${s})`;sc.style.height=(760*s)+'px';}
+document.querySelectorAll('.variant-switch button').forEach(b=>b.onclick=()=>setFrame(b.dataset.frame));
+window.addEventListener('resize',()=>{fit();drawTreemap();});
+
+/* ===== init ===== */
+setUrl('home');drawMini();drawPerPerson();drawDiff();drawStack('revStack','revLegend',REV,OCHRE);drawStack('natStack','natLegend',NAT,['--g6','--g5','--g4','--g3','--g2','--g1','--grey']);drawProj();interest(document.querySelector('#interest .chip'),'kids');
+new ResizeObserver(()=>drawTreemap()).observe(document.getElementById('treemap'));
+document.querySelector('[data-nav="home"]').classList.add('on');
+</script>
+</body>
+</html>

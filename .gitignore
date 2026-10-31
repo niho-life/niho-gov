@@ -27,3 +27,19 @@ kamakura-budget-ocr-v2/logs/
 kamakura-budget-ocr-v2/input/
 kamakura-budget-ocr-v2/__pycache__/
 
+
+# tessdata (download separately, see tools/budget-pdf/TESSDATA.md)
+tools/budget-pdf/tessdata/
+# local env / keys
+.env
+*-sa.json
+# python
+__pycache__/
+.venv/
+venv/
+# outputs
+tools/budget-pdf/out/
+tools/minutes/out/
+.DS_Store
+# built single-file mock (generated from gikai-v2.html + assets)
+docs/mock/gikai-v2-single.html
